@@ -1,0 +1,50 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Club, Prisma } from '@prisma/client';
+
+@Injectable()
+export class ClubsService {
+    constructor(private prisma: PrismaService) { }
+
+    async create(data: Prisma.ClubCreateInput): Promise<Club> {
+        return this.prisma.club.create({
+            data,
+        });
+    }
+
+    async findAll(): Promise<Club[]> {
+        return this.prisma.club.findMany({
+            include: {
+                users: true,
+                members: true,
+                sponsors: true,
+                payments: true,
+            },
+        });
+    }
+
+    async findOne(id: string): Promise<Club | null> {
+        return this.prisma.club.findUnique({
+            where: { id },
+            include: {
+                users: true,
+                members: true,
+                sponsors: true,
+                payments: true,
+            },
+        });
+    }
+
+    async update(id: string, data: Prisma.ClubUpdateInput): Promise<Club> {
+        return this.prisma.club.update({
+            where: { id },
+            data,
+        });
+    }
+
+    async remove(id: string): Promise<Club> {
+        return this.prisma.club.delete({
+            where: { id },
+        });
+    }
+} 
