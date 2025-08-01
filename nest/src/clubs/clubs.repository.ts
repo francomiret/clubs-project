@@ -76,7 +76,7 @@ export class ClubsRepository implements IClubsRepository {
 
     async findAllPaginated(query: PaginationQueryDto): Promise<{ data: Club[]; total: number }> {
         const { skip, take } = this.parsePagination(query);
-        
+
         const [data, total] = await Promise.all([
             this.prisma.club.findMany({
                 skip,
@@ -90,7 +90,7 @@ export class ClubsRepository implements IClubsRepository {
 
     async findAllWithRelationsPaginated(query: PaginationQueryDto): Promise<{ data: Club[]; total: number }> {
         const { skip, take } = this.parsePagination(query);
-        
+
         const [data, total] = await Promise.all([
             this.prisma.club.findMany({
                 skip,
@@ -112,7 +112,7 @@ export class ClubsRepository implements IClubsRepository {
         const page = parseInt(query.page?.toString() || '1');
         const limit = parseInt(query.limit?.toString() || '10');
         const skip = (page - 1) * limit;
-        
+
         return { skip, take: limit };
     }
 } 

@@ -23,7 +23,7 @@ export class ClubsService {
     async findAllPaginated(query: PaginationQueryDto) {
         const { data, total } = await this.clubsRepository.findAllWithRelationsPaginated(query);
         const { page, limit } = this.paginationService.parsePagination(query);
-        
+
         return this.paginationService.createPaginationResponse(data, total, page, limit);
     }
 

@@ -14,14 +14,14 @@ import { PaginationQueryDto, Paginated } from '../common';
 @ApiTags('example')
 @Controller('example')
 export class ExampleController {
-    constructor(private readonly exampleService: ExampleService) {}
+  constructor(private readonly exampleService: ExampleService) {}
 
-    @Get('paginated')
-    @Paginated() // Decorador que aplica paginación automáticamente
-    @ApiOperation({ summary: 'Obtener elementos con paginación' })
-    findAllPaginated(@Query() query: PaginationQueryDto) {
-        return this.exampleService.findAllPaginated(query);
-    }
+  @Get('paginated')
+  @Paginated() // Decorador que aplica paginación automáticamente
+  @ApiOperation({ summary: 'Obtener elementos con paginación' })
+  findAllPaginated(@Query() query: PaginationQueryDto) {
+    return this.exampleService.findAllPaginated(query);
+  }
 }
 ```
 
@@ -33,17 +33,23 @@ import { PaginationQueryDto, PaginationService } from '../common';
 
 @Injectable()
 export class ExampleService {
-    constructor(
-        private readonly exampleRepository: ExampleRepository,
-        private readonly paginationService: PaginationService,
-    ) {}
+  constructor(
+    private readonly exampleRepository: ExampleRepository,
+    private readonly paginationService: PaginationService,
+  ) {}
 
-    async findAllPaginated(query: PaginationQueryDto) {
-        const { data, total } = await this.exampleRepository.findAllPaginated(query);
-        const { page, limit } = this.paginationService.parsePagination(query);
-        
-        return this.paginationService.createPaginationResponse(data, total, page, limit);
-    }
+  async findAllPaginated(query: PaginationQueryDto) {
+    const { data, total } =
+      await this.exampleRepository.findAllPaginated(query);
+    const { page, limit } = this.paginationService.parsePagination(query);
+
+    return this.paginationService.createPaginationResponse(
+      data,
+      total,
+      page,
+      limit,
+    );
+  }
 }
 ```
 
@@ -56,29 +62,29 @@ import { PaginationQueryDto } from '../common';
 
 @Injectable()
 export class ExampleRepository {
-    constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-    async findAllPaginated(query: PaginationQueryDto) {
-        const { skip, take } = this.parsePagination(query);
-        
-        const [data, total] = await Promise.all([
-            this.prisma.example.findMany({
-                skip,
-                take,
-            }),
-            this.prisma.example.count(),
-        ]);
+  async findAllPaginated(query: PaginationQueryDto) {
+    const { skip, take } = this.parsePagination(query);
 
-        return { data, total };
-    }
+    const [data, total] = await Promise.all([
+      this.prisma.example.findMany({
+        skip,
+        take,
+      }),
+      this.prisma.example.count(),
+    ]);
 
-    private parsePagination(query: PaginationQueryDto) {
-        const page = parseInt(query.page?.toString() || '1');
-        const limit = parseInt(query.limit?.toString() || '10');
-        const skip = (page - 1) * limit;
-        
-        return { skip, take: limit };
-    }
+    return { data, total };
+  }
+
+  private parsePagination(query: PaginationQueryDto) {
+    const page = parseInt(query.page?.toString() || '1');
+    const limit = parseInt(query.limit?.toString() || '10');
+    const skip = (page - 1) * limit;
+
+    return { skip, take: limit };
+  }
 }
 ```
 
@@ -123,16 +129,20 @@ GET /clubs/paginated?page=3&limit=20    # Página 3, 20 elementos
 ## 🔧 Componentes Disponibles
 
 ### DTOs
+
 - `PaginationQueryDto`: Para validar los parámetros de query
 - `PaginationResponseDto`: Para documentar la respuesta en Swagger
 
 ### Servicios
+
 - `PaginationService`: Servicio con métodos de utilidad para paginación
 
 ### Decoradores
+
 - `@Paginated()`: Decorador que aplica paginación automáticamente
 
 ### Interceptores
+
 - `PaginationInterceptor`: Interceptor para transformar respuestas
 
 ## 🎯 Beneficios
@@ -146,6 +156,7 @@ GET /clubs/paginated?page=3&limit=20    # Página 3, 20 elementos
 ## 📝 Ejemplo Completo
 
 ### Controlador
+
 ```typescript
 @Get('paginated')
 @Paginated()
@@ -156,20 +167,22 @@ findAllPaginated(@Query() query: PaginationQueryDto) {
 ```
 
 ### Servicio
+
 ```typescript
 async findAllPaginated(query: PaginationQueryDto) {
     const { data, total } = await this.clubsRepository.findAllWithRelationsPaginated(query);
     const { page, limit } = this.paginationService.parsePagination(query);
-    
+
     return this.paginationService.createPaginationResponse(data, total, page, limit);
 }
 ```
 
 ### Repositorio
+
 ```typescript
 async findAllWithRelationsPaginated(query: PaginationQueryDto) {
     const { skip, take } = this.parsePagination(query);
-    
+
     const [data, total] = await Promise.all([
         this.prisma.club.findMany({
             skip,
@@ -193,4 +206,4 @@ async findAllWithRelationsPaginated(query: PaginationQueryDto) {
 1. **Agregar filtros**: Implementar búsqueda y filtros
 2. **Ordenamiento**: Agregar parámetros de ordenamiento
 3. **Cache**: Implementar cache para respuestas paginadas
-4. **Métricas**: Agregar métricas de uso de paginación 
+4. **Métricas**: Agregar métricas de uso de paginación
