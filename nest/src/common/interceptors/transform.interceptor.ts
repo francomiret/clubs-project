@@ -15,6 +15,14 @@ export interface ApiResponse<T> {
     timestamp: string;
     path: string;
     requestId?: string;
+    pagination?: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+        hasNext: boolean;
+        hasPrev: boolean;
+    };
 }
 
 @Injectable()

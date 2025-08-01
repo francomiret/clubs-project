@@ -2,7 +2,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class EntityNotFoundException extends HttpException {
     constructor(entityName: string, id?: string | number) {
-        const message = id
+        const message = id && id !== '' && id !== 0
             ? `${entityName} con ID ${id} no encontrado`
             : `${entityName} no encontrado`;
 
@@ -12,7 +12,7 @@ export class EntityNotFoundException extends HttpException {
 
 export class EntityAlreadyExistsException extends HttpException {
     constructor(entityName: string, field?: string) {
-        const message = field
+        const message = field && field !== ''
             ? `${entityName} con ${field} ya existe`
             : `${entityName} ya existe`;
 
@@ -22,7 +22,8 @@ export class EntityAlreadyExistsException extends HttpException {
 
 export class ValidationException extends HttpException {
     constructor(message: string | string[]) {
-        super(message, HttpStatus.BAD_REQUEST);
+        const finalMessage = Array.isArray(message) ? message : message;
+        super(finalMessage, HttpStatus.BAD_REQUEST);
     }
 }
 

@@ -4,6 +4,11 @@ import { Request, Response, NextFunction } from 'express';
 @Injectable()
 export class RequestIdMiddleware implements NestMiddleware {
     use(req: Request, res: Response, next: NextFunction) {
+        // Asegurar que headers existe
+        if (!req.headers) {
+            req.headers = {};
+        }
+
         const requestId = req.headers['x-request-id'] || this.generateRequestId();
 
         // Agregar el request ID a los headers de la request

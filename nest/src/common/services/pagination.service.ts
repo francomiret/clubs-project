@@ -4,8 +4,8 @@ import { PaginationQueryDto } from '../dto/pagination.dto';
 @Injectable()
 export class PaginationService {
     parsePagination(query: PaginationQueryDto) {
-        const page = parseInt(query.page?.toString() || '1');
-        const limit = parseInt(query.limit?.toString() || '10');
+        const page = Math.max(1, parseInt(query.page?.toString() || '1'));
+        const limit = Math.max(1, parseInt(query.limit?.toString() || '10'));
         const skip = (page - 1) * limit;
         
         return { 
