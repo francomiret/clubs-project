@@ -68,6 +68,21 @@ npm run test           # Ejecutar tests
 - `PATCH /clubs/:id` - Actualizar un club
 - `DELETE /clubs/:id` - Eliminar un club
 
+## 📚 Documentación de la API
+
+La API está completamente documentada con Swagger. Una vez que la aplicación esté ejecutándose, puedes acceder a la documentación interactiva en:
+
+```
+http://localhost:3000/api
+```
+
+La documentación incluye:
+
+- Todos los endpoints disponibles
+- Ejemplos de requests y responses
+- Validaciones de datos
+- Interfaz interactiva para probar endpoints
+
 ## 📁 Estructura del Proyecto
 
 ```
@@ -103,7 +118,8 @@ El archivo `docker-compose.yml` configura PostgreSQL:
 
 ## 📚 Documentación Adicional
 
-Para más detalles sobre la configuración de Prisma, consulta el archivo `PRISMA_README.md`.
+- **Prisma**: Para más detalles sobre la configuración de Prisma, consulta el archivo `PRISMA_README.md`.
+- **Swagger**: Para más detalles sobre la documentación de la API, consulta el archivo `SWAGGER_README.md`.
 
 ## 🧪 Pruebas
 
