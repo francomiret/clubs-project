@@ -10,6 +10,7 @@ export interface IUsersRepository {
     create(data: CreateUserDto): Promise<User>;
     findAll(): Promise<User[]>;
     findOne(id: string): Promise<User | null>;
+    findByEmail(email: string): Promise<User | null>;
     update(id: string, data: UpdateUserDto): Promise<User>;
     remove(id: string): Promise<User>;
     findByClubId(clubId: string): Promise<User[]>;
@@ -34,6 +35,12 @@ export class UsersRepository implements IUsersRepository {
     async findOne(id: string): Promise<User | null> {
         return this.prisma.user.findUnique({
             where: { id },
+        });
+    }
+
+    async findByEmail(email: string): Promise<User | null> {
+        return this.prisma.user.findUnique({
+            where: { email },
         });
     }
 

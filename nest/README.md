@@ -233,17 +233,59 @@ src/
 ├── prisma/
 │   ├── prisma.service.ts    # Servicio de conexión a BD
 │   └── prisma.module.ts     # Módulo global de Prisma
+├── common/
+│   ├── dto/                 # DTOs compartidos
+│   ├── services/            # Servicios compartidos
+│   ├── interceptors/        # Interceptores globales
+│   ├── filters/             # Filtros de excepciones
+│   ├── guards/              # Guards de autenticación
+│   ├── decorators/          # Decoradores personalizados
+│   └── middleware/          # Middleware global
+├── auth/
+│   ├── dto/                 # DTOs de autenticación
+│   ├── entities/            # Entidades de autenticación
+│   ├── strategies/          # Estrategias de Passport
+│   ├── guards/              # Guards de autenticación
+│   ├── decorators/          # Decoradores de auth
+│   ├── interfaces/          # Interfaces JWT
+│   ├── auth.service.ts      # Servicio de autenticación
+│   ├── auth.controller.ts   # Controlador de auth
+│   └── auth.module.ts       # Módulo de autenticación
 ├── clubs/
 │   ├── dto/
-│   │   ├── create-club.dto.ts
-│   │   ├── update-club.dto.ts
-│   │   └── index.ts
 │   ├── entities/
-│   │   └── club.entity.ts
 │   ├── clubs.repository.ts  # Patrón Repository
 │   ├── clubs.service.ts     # Lógica de negocio
 │   ├── clubs.controller.ts  # Controlador HTTP
 │   └── clubs.module.ts      # Módulo de clubs
+├── users/
+│   ├── dto/
+│   ├── entities/
+│   ├── users.repository.ts
+│   ├── users.service.ts
+│   ├── users.controller.ts
+│   └── users.module.ts
+├── members/
+│   ├── dto/
+│   ├── entities/
+│   ├── members.repository.ts
+│   ├── members.service.ts
+│   ├── members.controller.ts
+│   └── members.module.ts
+├── sponsors/
+│   ├── dto/
+│   ├── entities/
+│   ├── sponsors.repository.ts
+│   ├── sponsors.service.ts
+│   ├── sponsors.controller.ts
+│   └── sponsors.module.ts
+├── payments/
+│   ├── dto/
+│   ├── entities/
+│   ├── payments.repository.ts
+│   ├── payments.service.ts
+│   ├── payments.controller.ts
+│   └── payments.module.ts
 ├── swagger.config.ts        # Configuración de Swagger
 ├── swagger-ui.config.ts     # Configuración de UI de Swagger
 └── app.module.ts            # Módulo principal
@@ -253,10 +295,21 @@ src/
 
 ### Variables de Entorno
 
-El archivo `.env` contiene la configuración de la base de datos:
+El archivo `.env` contiene la configuración necesaria:
 
 ```
+# Database
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clubs_db?schema=public"
+
+# JWT Configuration
+JWT_SECRET="your-super-secret-jwt-key-here"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-here"
+JWT_EXPIRES_IN="1h"
+JWT_REFRESH_EXPIRES_IN="7d"
+
+# Application
+PORT=3000
+NODE_ENV=development
 ```
 
 ### Docker
@@ -308,12 +361,14 @@ Para expandir el proyecto, puedes:
 
 1. **Agregar más DTOs** para otros modelos (User, Member, Sponsor, Payment)
 2. **Crear entidades** para todos los modelos
-3. **Agregar autenticación** con `@ApiBearerAuth()`
-4. **Documentar códigos de error** específicos
-5. **Agregar ejemplos** más detallados
-6. **Crear repositorios** para otros modelos
-7. **Implementar cache** en el repositorio
-8. **Agregar transacciones** para operaciones complejas
+3. **Documentar códigos de error** específicos
+4. **Agregar ejemplos** más detallados
+5. **Crear repositorios** para otros modelos
+6. **Implementar cache** en el repositorio
+7. **Agregar transacciones** para operaciones complejas
+8. **Implementar blacklist de tokens** para logout
+9. **Agregar rate limiting** para endpoints sensibles
+10. **Implementar autenticación de dos factores**
 
 ## 🔍 Verificación
 

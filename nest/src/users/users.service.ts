@@ -61,4 +61,8 @@ export class UsersService {
 
         return this.paginationService.createPaginationResponse(data, total, page, limit);
     }
+
+    async findByEmail(email: string): Promise<User | null> {
+        return this.usersRepository.findByEmail(email);
+    }
 } 

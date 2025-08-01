@@ -16,7 +16,8 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Apply global middleware
-  app.use(RequestIdMiddleware);
+  const requestIdMiddleware = new RequestIdMiddleware();
+  app.use(requestIdMiddleware.use.bind(requestIdMiddleware));
 
   // Configurar validación global
   app.useGlobalPipes(new ValidationPipe({
