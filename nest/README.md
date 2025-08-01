@@ -1,6 +1,6 @@
 # Clubs Project - NestJS con Prisma y PostgreSQL
 
-Este proyecto está configurado con NestJS, Prisma ORM y PostgreSQL usando Docker.
+Este proyecto está configurado con NestJS, Prisma ORM y PostgreSQL usando Docker, implementando el patrón Repository y documentación completa con Swagger.
 
 ## 🚀 Configuración Rápida
 
@@ -38,11 +38,97 @@ npm run start:dev
 
 El proyecto incluye los siguientes modelos:
 
-- **Club**: Entidad principal que contiene usuarios, miembros, patrocinadores y pagos
-- **User**: Usuarios del sistema con roles (ADMIN, TREASURER, MEMBER, SPONSOR)
-- **Member**: Miembros del club que pueden realizar pagos
-- **Sponsor**: Patrocinadores que pueden realizar pagos
-- **Payment**: Pagos que pueden ser realizados por miembros o patrocinadores
+### Club
+
+- `id`: Identificador único (UUID)
+- `name`: Nombre del club
+- `users`: Relación con usuarios del club
+- `members`: Relación con miembros del club
+- `sponsors`: Relación con patrocinadores
+- `payments`: Relación con pagos
+- `createdAt`: Fecha de creación
+- `updatedAt`: Fecha de actualización
+
+### User
+
+- `id`: Identificador único (UUID)
+- `email`: Email único del usuario
+- `password`: Contraseña del usuario
+- `name`: Nombre del usuario
+- `role`: Rol del usuario (ADMIN, TREASURER, MEMBER, SPONSOR)
+- `clubId`: Referencia al club
+- `createdAt`: Fecha de creación
+- `updatedAt`: Fecha de actualización
+
+### Member
+
+- `id`: Identificador único (UUID)
+- `name`: Nombre del miembro
+- `email`: Email único del miembro
+- `clubId`: Referencia al club
+- `payments`: Relación con pagos del miembro
+- `createdAt`: Fecha de creación
+
+### Sponsor
+
+- `id`: Identificador único (UUID)
+- `name`: Nombre del patrocinador
+- `email`: Email único del patrocinador
+- `clubId`: Referencia al club
+- `payments`: Relación con pagos del patrocinador
+- `createdAt`: Fecha de creación
+
+### Payment
+
+- `id`: Identificador único (UUID)
+- `amount`: Monto del pago
+- `description`: Descripción opcional del pago
+- `date`: Fecha del pago
+- `memberId`: Referencia al miembro (opcional)
+- `sponsorId`: Referencia al patrocinador (opcional)
+- `clubId`: Referencia al club
+
+## 🏗️ Arquitectura del Proyecto
+
+### Patrón Repository
+
+Este proyecto implementa el patrón Repository para mejorar la separación de responsabilidades y facilitar el testing.
+
+#### Componentes del Patrón Repository:
+
+1. **Interfaz del Repositorio** (`IClubsRepository`):
+   - Define el contrato para todas las operaciones de datos
+   - Métodos para CRUD básico y operaciones con relaciones
+
+2. **Implementación del Repositorio** (`ClubsRepository`):
+   - Implementa la interfaz usando Prisma
+   - Maneja todas las operaciones de base de datos
+   - Incluye métodos para obtener datos con relaciones
+
+3. **Token de Inyección** (`CLUBS_REPOSITORY`):
+   - Permite la inyección de dependencias con la interfaz
+   - Facilita el testing y la flexibilidad
+
+4. **Servicio** (`ClubsService`):
+   - Usa el repositorio a través de la interfaz
+   - Separación clara de responsabilidades
+   - Lógica de negocio independiente del acceso a datos
+
+#### Beneficios del Patrón Repository:
+
+- **Separación de responsabilidades**: Servicio, Repositorio y Controlador tienen roles claros
+- **Testabilidad mejorada**: Fácil mock del repositorio para tests unitarios
+- **Flexibilidad**: Cambio de ORM sin afectar el servicio
+- **Mantenibilidad**: Código más limpio y organizado
+
+### Flujo de Datos
+
+```
+HTTP Request → Controller → Service → Repository → Database
+                ↓           ↓         ↓
+              DTOs      Business    Data Access
+                        Logic       Layer
+```
 
 ## 🛠️ Comandos Útiles
 
@@ -68,7 +154,7 @@ npm run test           # Ejecutar tests
 - `PATCH /clubs/:id` - Actualizar un club
 - `DELETE /clubs/:id` - Eliminar un club
 
-## 📚 Documentación de la API
+## 📚 Documentación de la API (Swagger)
 
 La API está completamente documentada con Swagger. Una vez que la aplicación esté ejecutándose, puedes acceder a la documentación interactiva en:
 
@@ -76,12 +162,69 @@ La API está completamente documentada con Swagger. Una vez que la aplicación e
 http://localhost:3000/api
 ```
 
-La documentación incluye:
+### Características de la Documentación:
 
-- Todos los endpoints disponibles
-- Ejemplos de requests y responses
-- Validaciones de datos
-- Interfaz interactiva para probar endpoints
+- **Documentación Automática**: Todos los endpoints están documentados automáticamente
+- **Validación de DTOs**: Los DTOs incluyen validaciones y ejemplos
+- **Respuestas Tipadas**: Todas las respuestas están tipadas con entidades
+- **Interfaz Interactiva**: Puedes probar los endpoints directamente desde Swagger UI
+- **Organización por Tags**: Los endpoints están organizados por categorías
+
+### DTOs Configurados:
+
+- **CreateClubDto**: Para crear nuevos clubs
+- **UpdateClubDto**: Para actualizar clubs existentes
+- **ClubEntity**: Entidad para documentar las respuestas
+
+### Decoradores Utilizados:
+
+- `@ApiTags()`: Organizar endpoints por categorías
+- `@ApiOperation()`: Describir operaciones
+- `@ApiResponse()`: Documentar respuestas
+- `@ApiParam()`: Documentar parámetros de ruta
+- `@ApiProperty()`: Documentar propiedades de DTOs
+
+### Ejemplo de Uso:
+
+#### Crear un Club
+
+```bash
+POST /clubs
+Content-Type: application/json
+
+{
+  "name": "Club Deportivo Nuevo"
+}
+```
+
+#### Obtener Todos los Clubs
+
+```bash
+GET /clubs
+```
+
+#### Obtener un Club por ID
+
+```bash
+GET /clubs/{id}
+```
+
+#### Actualizar un Club
+
+```bash
+PATCH /clubs/{id}
+Content-Type: application/json
+
+{
+  "name": "Club Deportivo Actualizado"
+}
+```
+
+#### Eliminar un Club
+
+```bash
+DELETE /clubs/{id}
+```
 
 ## 📁 Estructura del Proyecto
 
@@ -91,9 +234,18 @@ src/
 │   ├── prisma.service.ts    # Servicio de conexión a BD
 │   └── prisma.module.ts     # Módulo global de Prisma
 ├── clubs/
+│   ├── dto/
+│   │   ├── create-club.dto.ts
+│   │   ├── update-club.dto.ts
+│   │   └── index.ts
+│   ├── entities/
+│   │   └── club.entity.ts
+│   ├── clubs.repository.ts  # Patrón Repository
 │   ├── clubs.service.ts     # Lógica de negocio
 │   ├── clubs.controller.ts  # Controlador HTTP
 │   └── clubs.module.ts      # Módulo de clubs
+├── swagger.config.ts        # Configuración de Swagger
+├── swagger-ui.config.ts     # Configuración de UI de Swagger
 └── app.module.ts            # Módulo principal
 ```
 
@@ -116,10 +268,27 @@ El archivo `docker-compose.yml` configura PostgreSQL:
 - Contraseña: postgres
 - Base de datos: clubs_db
 
-## 📚 Documentación Adicional
+### Validación Global
 
-- **Prisma**: Para más detalles sobre la configuración de Prisma, consulta el archivo `PRISMA_README.md`.
-- **Swagger**: Para más detalles sobre la documentación de la API, consulta el archivo `SWAGGER_README.md`.
+La aplicación incluye validación global con `class-validator`:
+
+```typescript
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+);
+```
+
+### Opciones de Swagger UI
+
+- **Ordenamiento alfabético** de tags y operaciones
+- **Expansión automática** de la documentación
+- **Filtros** para buscar endpoints
+- **Duración de requests** visible
+- **Modo "Try it out"** habilitado
 
 ## 🧪 Pruebas
 
@@ -132,3 +301,26 @@ El script `scripts/seed.ts` crea datos de ejemplo que incluyen:
 - Pagos de ejemplo
 
 Ejecuta `npm run db:seed` para poblar la base de datos con estos datos de prueba.
+
+## 🎯 Próximos Pasos
+
+Para expandir el proyecto, puedes:
+
+1. **Agregar más DTOs** para otros modelos (User, Member, Sponsor, Payment)
+2. **Crear entidades** para todos los modelos
+3. **Agregar autenticación** con `@ApiBearerAuth()`
+4. **Documentar códigos de error** específicos
+5. **Agregar ejemplos** más detallados
+6. **Crear repositorios** para otros modelos
+7. **Implementar cache** en el repositorio
+8. **Agregar transacciones** para operaciones complejas
+
+## 🔍 Verificación
+
+Para verificar que todo funciona correctamente:
+
+1. Inicia la aplicación: `npm run start:dev`
+2. Abre tu navegador en: `http://localhost:3000/api`
+3. Deberías ver la interfaz de Swagger con todos los endpoints documentados
+4. Prueba los endpoints usando la interfaz interactiva
+5. Verifica que la base de datos esté poblada con datos de ejemplo

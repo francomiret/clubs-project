@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { ClubsService } from './clubs.service';
 import { CreateClubDto, UpdateClubDto } from './dto';
 import { ClubEntity } from './entities/club.entity';
+import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
 
 @ApiTags('clubs')
 @Controller('clubs')
@@ -30,6 +31,18 @@ export class ClubsController {
     })
     findAll() {
         return this.clubsService.findAll();
+    }
+
+    @Get('paginated')
+    @Paginated()
+    @ApiOperation({ summary: 'Obtener todos los clubs con paginación' })
+    @ApiResponse({
+        status: 200,
+        description: 'Lista paginada de clubs obtenida exitosamente',
+        type: PaginationResponseDto,
+    })
+    findAllPaginated(@Query() query: PaginationQueryDto) {
+        return this.clubsService.findAllPaginated(query);
     }
 
     @Get(':id')
