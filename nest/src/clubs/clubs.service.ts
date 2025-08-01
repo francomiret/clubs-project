@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { Club } from '@prisma/client';
 import { CreateClubDto, UpdateClubDto } from './dto';
 import { IClubsRepository, CLUBS_REPOSITORY } from './clubs.repository';
-import { PaginationQueryDto, PaginationService } from '../common';
+import { PaginationQueryDto, PaginationService, EntityNotFoundException } from '../common';
 
 @Injectable()
 export class ClubsService {
@@ -27,15 +27,27 @@ export class ClubsService {
         return this.paginationService.createPaginationResponse(data, total, page, limit);
     }
 
-    async findOne(id: string): Promise<Club | null> {
-        return this.clubsRepository.findByIdWithRelations(id);
+    async findOne(id: string): Promise<Club> {
+        const club = await this.clubsRepository.findByIdWithRelations(id);
+        if (!club) {
+            throw new EntityNotFoundException('Club', id);
+        }
+        return club;
     }
 
     async update(id: string, data: UpdateClubDto): Promise<Club> {
+        const club = await this.clubsRepository.findByIdWithRelations(id);
+        if (!club) {
+            throw new EntityNotFoundException('Club', id);
+        }
         return this.clubsRepository.update(id, data);
     }
 
     async remove(id: string): Promise<Club> {
+        const club = await this.clubsRepository.findByIdWithRelations(id);
+        if (!club) {
+            throw new EntityNotFoundException('Club', id);
+        }
         return this.clubsRepository.remove(id);
     }
 } 

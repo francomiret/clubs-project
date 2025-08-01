@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { IUsersRepository, USERS_REPOSITORY } from './users.repository';
-import { PaginationQueryDto, PaginationService } from '../common';
+import { PaginationQueryDto, PaginationService, EntityNotFoundException } from '../common';
 
 @Injectable()
 export class UsersService {
@@ -27,15 +27,27 @@ export class UsersService {
         return this.paginationService.createPaginationResponse(data, total, page, limit);
     }
 
-    async findOne(id: string): Promise<User | null> {
-        return this.usersRepository.findOne(id);
+    async findOne(id: string): Promise<User> {
+        const user = await this.usersRepository.findOne(id);
+        if (!user) {
+            throw new EntityNotFoundException('Usuario', id);
+        }
+        return user;
     }
 
     async update(id: string, data: UpdateUserDto): Promise<User> {
+        const user = await this.usersRepository.findOne(id);
+        if (!user) {
+            throw new EntityNotFoundException('Usuario', id);
+        }
         return this.usersRepository.update(id, data);
     }
 
     async remove(id: string): Promise<User> {
+        const user = await this.usersRepository.findOne(id);
+        if (!user) {
+            throw new EntityNotFoundException('Usuario', id);
+        }
         return this.usersRepository.remove(id);
     }
 

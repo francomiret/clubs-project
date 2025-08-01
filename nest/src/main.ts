@@ -4,16 +4,41 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { swaggerConfig } from './swagger.config';
 import { swaggerUiOptions } from './swagger-ui.config';
+import {
+  HttpExceptionFilter,
+  LoggingInterceptor,
+  TransformInterceptor,
+  RequestIdMiddleware,
+  ValidationException
+} from './common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Apply global middleware
+  app.use(RequestIdMiddleware);
 
   // Configurar validación global
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
+    exceptionFactory: (errors) => {
+      const messages = errors.map(error =>
+        `${error.property}: ${Object.values(error.constraints || {}).join(', ')}`
+      );
+      return new ValidationException(messages);
+    },
   }));
+
+  // Apply global exception filter
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Apply global interceptors
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TransformInterceptor(),
+  );
 
   // Configurar Swagger
   const document = SwaggerModule.createDocument(app, swaggerConfig);
