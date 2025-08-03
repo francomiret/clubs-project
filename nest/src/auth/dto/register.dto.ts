@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength, IsEnum } from 'class-validator';
-import { Role } from '@prisma/client';
+import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class RegisterDto {
     @ApiProperty({
@@ -29,18 +28,18 @@ export class RegisterDto {
     name: string;
 
     @ApiProperty({
-        description: 'Rol del usuario',
-        enum: Role,
-        example: 'MEMBER',
-    })
-    @IsEnum(Role)
-    role: Role;
-
-    @ApiProperty({
         description: 'ID del club al que pertenece',
         example: 'c02c6a05-eb28-48cf-96a4-7327832c0338',
     })
     @IsString()
     @IsNotEmpty()
     clubId: string;
+
+    @ApiProperty({
+        description: 'ID del rol en el club',
+        example: 'r02c6a05-eb28-48cf-96a4-7327832c0338',
+    })
+    @IsString()
+    @IsNotEmpty()
+    roleId: string;
 } 

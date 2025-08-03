@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-08-03T14:11:02.640Z",
+  "users": [
+    {
+      "id": "ec5fcfc5-9435-422d-9278-62e25ef1b92a",
+      "email": "admin@club.com",
+      "name": "Administrador",
+      "password": "password123",
+      "role": "ADMIN",
+      "clubId": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+      "createdAt": "2025-08-01T02:51:32.523Z",
+      "updatedAt": "2025-08-01T02:51:32.523Z",
+      "club": {
+        "id": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+        "name": "Club Deportivo Ejemplo",
+        "createdAt": "2025-08-01T02:51:32.516Z",
+        "updatedAt": "2025-08-01T02:51:32.516Z"
+      }
+    },
+    {
+      "id": "a555b093-50c4-4a1d-9e63-066c19ae0639",
+      "email": "user@example.com",
+      "name": "Juan Pérez",
+      "password": "$2b$10$tlmIga9155dft.3pNAlmaOIrMyXEXF5EWE31Q7x.VcOI0iO4c21tW",
+      "role": "MEMBER",
+      "clubId": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+      "createdAt": "2025-08-01T18:01:06.508Z",
+      "updatedAt": "2025-08-01T18:01:06.508Z",
+      "club": {
+        "id": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+        "name": "Club Deportivo Ejemplo",
+        "createdAt": "2025-08-01T02:51:32.516Z",
+        "updatedAt": "2025-08-01T02:51:32.516Z"
+      }
+    },
+    {
+      "id": "af9a45e5-d375-4670-a548-1c077d425dd2",
+      "email": "test@example.com",
+      "name": "Test User",
+      "password": "$2b$10$j.B2X8tzmyez9fT0tAsD5urn8BinH3qJQoDUNWz.Ffv2FAzfLV3QG",
+      "role": "MEMBER",
+      "clubId": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+      "createdAt": "2025-08-01T18:29:23.893Z",
+      "updatedAt": "2025-08-01T18:29:23.893Z",
+      "club": {
+        "id": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+        "name": "Club Deportivo Ejemplo",
+        "createdAt": "2025-08-01T02:51:32.516Z",
+        "updatedAt": "2025-08-01T02:51:32.516Z"
+      }
+    },
+    {
+      "id": "0ced64be-8827-4d38-a59f-4ac983b3e5cf",
+      "email": "test2@example.com",
+      "name": "Test User 2",
+      "password": "$2b$10$eBIQWiFF10auuCWOXBCFjeKLS2lE6QEwamNfYlysQ6NgR98KBo5eO",
+      "role": "MEMBER",
+      "clubId": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+      "createdAt": "2025-08-01T19:24:48.886Z",
+      "updatedAt": "2025-08-01T19:24:48.886Z",
+      "club": {
+        "id": "c02c6a05-eb28-48cf-96a4-7327832c0338",
+        "name": "Club Deportivo Ejemplo",
+        "createdAt": "2025-08-01T02:51:32.516Z",
+        "updatedAt": "2025-08-01T02:51:32.516Z"
+      }
+    }
+  ]
+}

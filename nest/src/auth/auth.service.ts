@@ -5,6 +5,7 @@ import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { JwtPayload, JwtRefreshPayload } from './interfaces/jwt-payload.interface';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
         private readonly usersService: UsersService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly prisma: PrismaService,
     ) { }
 
     async validateUser(email: string, password: string) {
@@ -20,7 +22,35 @@ export class AuthService {
 
             if (user && await bcrypt.compare(password, user.password)) {
                 const { password, ...result } = user;
-                return result;
+
+                // Obtener roles y permisos del usuario
+                const userWithRoles = await this.prisma.user.findUnique({
+                    where: { id: user.id },
+                    include: {
+                        clubs: {
+                            include: {
+                                role: {
+                                    include: {
+                                        permissions: {
+                                            include: {
+                                                permission: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                const permissions = userWithRoles?.clubs?.flatMap(userClub =>
+                    userClub.role.permissions.map(rp => rp.permission.name)
+                ) || [];
+
+                return {
+                    ...result,
+                    permissions: [...new Set(permissions)] // Eliminar duplicados
+                };
             }
 
             return null;
@@ -44,8 +74,7 @@ export class AuthService {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role,
-                clubId: user.clubId,
+                permissions: user.permissions || [],
             },
         };
     }
@@ -66,8 +95,18 @@ export class AuthService {
 
         // Crear usuario
         const user = await this.usersService.create({
-            ...registerDto,
+            email: registerDto.email,
             password: hashedPassword,
+            name: registerDto.name,
+        });
+
+        // Crear relación UserClub
+        await this.prisma.userClub.create({
+            data: {
+                userId: user.id,
+                clubId: registerDto.clubId,
+                roleId: registerDto.roleId,
+            },
         });
 
         const { password, ...userWithoutPassword } = user;
@@ -79,8 +118,7 @@ export class AuthService {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                role: user.role,
-                clubId: user.clubId,
+                permissions: [],
             },
         };
     }
@@ -113,8 +151,7 @@ export class AuthService {
         const payload: JwtPayload = {
             sub: user.id,
             email: user.email,
-            role: user.role,
-            clubId: user.clubId,
+            permissions: user.permissions || [],
         };
 
         const refreshPayload: JwtRefreshPayload = {

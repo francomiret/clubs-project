@@ -1,8 +1,7 @@
 export interface JwtPayload {
     sub: string; // User ID
     email: string;
-    role: string;
-    clubId: string;
+    permissions: string[];
     iat?: number; // Issued at
     exp?: number; // Expiration time
 }

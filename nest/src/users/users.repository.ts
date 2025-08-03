@@ -59,7 +59,29 @@ export class UsersRepository implements IUsersRepository {
 
     async findByClubId(clubId: string): Promise<User[]> {
         return this.prisma.user.findMany({
-            where: { clubId },
+            where: {
+                clubs: {
+                    some: {
+                        clubId,
+                    },
+                },
+            },
+            include: {
+                clubs: {
+                    where: { clubId },
+                    include: {
+                        role: {
+                            include: {
+                                permissions: {
+                                    include: {
+                                        permission: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
         });
     }
 
@@ -82,12 +104,40 @@ export class UsersRepository implements IUsersRepository {
 
         const [data, total] = await Promise.all([
             this.prisma.user.findMany({
-                where: { clubId },
+                where: {
+                    clubs: {
+                        some: {
+                            clubId,
+                        },
+                    },
+                },
+                include: {
+                    clubs: {
+                        where: { clubId },
+                        include: {
+                            role: {
+                                include: {
+                                    permissions: {
+                                        include: {
+                                            permission: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
                 skip,
                 take,
             }),
             this.prisma.user.count({
-                where: { clubId },
+                where: {
+                    clubs: {
+                        some: {
+                            clubId,
+                        },
+                    },
+                },
             }),
         ]);
 

@@ -8,6 +8,8 @@ import { MembersModule } from './members/members.module';
 import { SponsorsModule } from './sponsors/sponsors.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
+import { RolesModule } from './roles/roles.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { AuthModule } from './auth/auth.module';
     SponsorsModule,
     PaymentsModule,
     AuthModule,
+    RolesModule,
+    PermissionsModule,
   ],
   controllers: [],
   providers: [],

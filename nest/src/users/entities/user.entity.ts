@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 
 export class UserEntity {
     @ApiProperty({
@@ -21,17 +20,22 @@ export class UserEntity {
     name: string;
 
     @ApiProperty({
-        description: 'Rol del usuario',
-        enum: Role,
-        example: 'MEMBER',
+        description: 'Clubs y roles del usuario',
+        example: [
+            {
+                clubId: 'c02c6a05-eb28-48cf-96a4-7327832c0338',
+                roleId: 'r02c6a05-eb28-48cf-96a4-7327832c0338',
+                role: { name: 'ADMIN' },
+                club: { name: 'Club Deportivo' }
+            }
+        ],
     })
-    role: Role;
-
-    @ApiProperty({
-        description: 'ID del club al que pertenece',
-        example: 'c02c6a05-eb28-48cf-96a4-7327832c0338',
-    })
-    clubId: string;
+    clubs?: Array<{
+        clubId: string;
+        roleId: string;
+        role: { name: string };
+        club: { name: string };
+    }>;
 
     @ApiProperty({
         description: 'Fecha de creación',
