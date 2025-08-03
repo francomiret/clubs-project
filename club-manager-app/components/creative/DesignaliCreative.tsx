@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { HomeSection } from "./sections/HomeSection";
-import { AppsSection } from "./sections/AppsSection";
-import { FilesSection } from "./sections/FilesSection";
-import { ProjectsSection } from "./sections/ProjectsSection";
-import { LearnSection } from "./sections/LearnSection";
+import { MembersSection } from "./sections/MembersSection";
+import { UsersSection } from "./sections/UsersSection";
+import { SponsorsSection } from "./sections/SponsorsSection";
+import { PaymentsSection } from "./sections/PaymentsSection";
 
 // Importar datos y tipos
 import {
@@ -24,6 +24,10 @@ import {
   projects,
   tutorials,
   communityPosts,
+  members,
+  users,
+  sponsors,
+  payments,
 } from "./data";
 
 export function DesignaliCreative() {
@@ -102,28 +106,28 @@ export function DesignaliCreative() {
                   Home
                 </TabsTrigger>
                 <TabsTrigger
-                  value="apps"
+                  value="members"
                   className="rounded-xl data-[state=active]:rounded-xl"
                 >
-                  Apps
+                  Members
                 </TabsTrigger>
                 <TabsTrigger
-                  value="files"
+                  value="users"
                   className="rounded-xl data-[state=active]:rounded-xl"
                 >
-                  Files
+                  Users
                 </TabsTrigger>
                 <TabsTrigger
-                  value="projects"
+                  value="sponsors"
                   className="rounded-xl data-[state=active]:rounded-xl"
                 >
-                  Projects
+                  Sponsors
                 </TabsTrigger>
                 <TabsTrigger
-                  value="learn"
+                  value="payments"
                   className="rounded-xl data-[state=active]:rounded-xl"
                 >
-                  Learn
+                  Payments
                 </TabsTrigger>
               </TabsList>
               <div className="hidden md:flex gap-2">
@@ -155,20 +159,20 @@ export function DesignaliCreative() {
                   />
                 </TabsContent>
 
-                <TabsContent value="apps" className="space-y-8 mt-0">
-                  <AppsSection apps={apps} />
+                <TabsContent value="members" className="space-y-8 mt-0">
+                  <MembersSection members={members} />
                 </TabsContent>
 
-                <TabsContent value="files" className="space-y-8 mt-0">
-                  <FilesSection recentFiles={recentFiles} />
+                <TabsContent value="users" className="space-y-8 mt-0">
+                  <UsersSection users={users} />
                 </TabsContent>
 
-                <TabsContent value="projects" className="space-y-8 mt-0">
-                  <ProjectsSection projects={projects} />
+                <TabsContent value="sponsors" className="space-y-8 mt-0">
+                  <SponsorsSection sponsors={sponsors} />
                 </TabsContent>
 
-                <TabsContent value="learn" className="space-y-8 mt-0">
-                  <LearnSection tutorials={tutorials} />
+                <TabsContent value="payments" className="space-y-8 mt-0">
+                  <PaymentsSection payments={payments} members={members} />
                 </TabsContent>
               </motion.div>
             </AnimatePresence>

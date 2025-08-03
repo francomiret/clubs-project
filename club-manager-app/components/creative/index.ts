@@ -8,10 +8,10 @@ export { IconRenderer } from "./IconRenderer"
 
 // Exportar secciones
 export { HomeSection } from "./sections/HomeSection"
-export { AppsSection } from "./sections/AppsSection"
-export { FilesSection } from "./sections/FilesSection"
-export { ProjectsSection } from "./sections/ProjectsSection"
-export { LearnSection } from "./sections/LearnSection"
+export { MembersSection } from "./sections/MembersSection"
+export { UsersSection } from "./sections/UsersSection"
+export { SponsorsSection } from "./sections/SponsorsSection"
+export { PaymentsSection } from "./sections/PaymentsSection"
 
 // Exportar tipos y datos
 export * from "./types"

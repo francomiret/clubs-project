@@ -14,10 +14,10 @@ creative/
 ├── Header.tsx                  # Componente de cabecera
 ├── sections/                   # Secciones de contenido
 │   ├── HomeSection.tsx         # Sección de inicio
-│   ├── AppsSection.tsx         # Sección de aplicaciones
-│   ├── FilesSection.tsx        # Sección de archivos
-│   ├── ProjectsSection.tsx     # Sección de proyectos
-│   └── LearnSection.tsx        # Sección de aprendizaje
+│   ├── MembersSection.tsx      # Sección de miembros del equipo
+│   ├── UsersSection.tsx        # Sección de gestión de usuarios
+│   ├── SponsorsSection.tsx     # Sección de gestión de sponsors
+│   └── PaymentsSection.tsx     # Sección de gestión de pagos
 └── README.md                   # Este archivo
 ```
 
@@ -35,10 +35,11 @@ creative/
 ### Secciones de Contenido
 
 - **`HomeSection.tsx`**: Página de inicio con resumen de apps, archivos y proyectos
-- **`AppsSection.tsx`**: Gestión de aplicaciones creativas
-- **`FilesSection.tsx`**: Explorador de archivos
-- **`ProjectsSection.tsx`**: Gestión de proyectos
-- **`LearnSection.tsx`**: Tutoriales y recursos de aprendizaje
+
+- **`MembersSection.tsx`**: Gestión completa de miembros del equipo con CRUD
+- **`UsersSection.tsx`**: Gestión de usuarios del sistema con roles y permisos
+- **`SponsorsSection.tsx`**: Gestión de sponsors y acuerdos de patrocinio
+- **`PaymentsSection.tsx`**: Gestión de transacciones y pagos
 
 ### Datos y Tipos
 
