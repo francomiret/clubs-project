@@ -1,4 +1,4 @@
-import { SidebarItem, App, RecentFile, Project, Tutorial, CommunityPost, Member, User, Sponsor, Payment } from "./types"
+import { SidebarItem, App, RecentFile, Project, Tutorial, CommunityPost, Member, User, Sponsor, Payment, Permission, Role } from "./types"
 
 // Sample data for apps
 export const apps: App[] = [
@@ -308,65 +308,34 @@ export const sidebarItems: SidebarItem[] = [
         isActive: true,
     },
     {
-        title: "Apps",
-        icon: "Grid",
-        badge: "2",
-        items: [
-            { title: "All Apps", url: "#" },
-            { title: "Recent", url: "#" },
-            { title: "Updates", url: "#", badge: "2" },
-            { title: "Installed", url: "#" },
-        ],
-    },
-    {
-        title: "Files",
-        icon: "FileText",
-        items: [
-            { title: "Recent", url: "#" },
-            { title: "Shared with me", url: "#", badge: "3" },
-            { title: "Favorites", url: "#" },
-            { title: "Trash", url: "#" },
-        ],
-    },
-    {
-        title: "Projects",
-        icon: "Layers",
-        badge: "4",
-        items: [
-            { title: "Active Projects", url: "#", badge: "4" },
-            { title: "Archived", url: "#" },
-            { title: "Templates", url: "#" },
-        ],
-    },
-    {
-        title: "Learn",
-        icon: "BookOpen",
-        items: [
-            { title: "Tutorials", url: "#" },
-            { title: "Courses", url: "#" },
-            { title: "Webinars", url: "#" },
-            { title: "Resources", url: "#" },
-        ],
-    },
-    {
-        title: "Community",
+        title: "Members",
         icon: "Users",
-        items: [
-            { title: "Explore", url: "#" },
-            { title: "Following", url: "#" },
-            { title: "Challenges", url: "#" },
-            { title: "Events", url: "#" },
-        ],
+        badge: "8",
     },
     {
-        title: "Resources",
-        icon: "Bookmark",
-        items: [
-            { title: "Stock Photos", url: "#" },
-            { title: "Fonts", url: "#" },
-            { title: "Icons", url: "#" },
-            { title: "Templates", url: "#" },
-        ],
+        title: "Users",
+        icon: "UserPlus",
+        badge: "5",
+    },
+    {
+        title: "Sponsors",
+        icon: "Building",
+        badge: "4",
+    },
+    {
+        title: "Payments",
+        icon: "DollarSign",
+        badge: "6",
+    },
+    {
+        title: "Roles",
+        icon: "ShieldCheck",
+        badge: "3",
+    },
+    {
+        title: "Permissions",
+        icon: "Settings",
+        badge: "16",
     },
 ]
 
@@ -745,4 +714,139 @@ export const payments: Payment[] = [
         receiptUrl: "/receipts/txn-006.pdf",
         notes: "Paid in cash at office",
     },
+]
+
+// Sample data for permissions
+export const permissions: Permission[] = [
+    {
+        id: "1",
+        name: "users.read",
+        description: "Leer información de usuarios"
+    },
+    {
+        id: "2",
+        name: "users.create",
+        description: "Crear nuevos usuarios"
+    },
+    {
+        id: "3",
+        name: "users.update",
+        description: "Actualizar información de usuarios"
+    },
+    {
+        id: "4",
+        name: "users.delete",
+        description: "Eliminar usuarios"
+    },
+    {
+        id: "5",
+        name: "members.read",
+        description: "Leer información de miembros"
+    },
+    {
+        id: "6",
+        name: "members.create",
+        description: "Crear nuevos miembros"
+    },
+    {
+        id: "7",
+        name: "members.update",
+        description: "Actualizar información de miembros"
+    },
+    {
+        id: "8",
+        name: "members.delete",
+        description: "Eliminar miembros"
+    },
+    {
+        id: "9",
+        name: "roles.read",
+        description: "Leer información de roles"
+    },
+    {
+        id: "10",
+        name: "roles.create",
+        description: "Crear nuevos roles"
+    },
+    {
+        id: "11",
+        name: "roles.update",
+        description: "Actualizar información de roles"
+    },
+    {
+        id: "12",
+        name: "roles.delete",
+        description: "Eliminar roles"
+    },
+    {
+        id: "13",
+        name: "permissions.read",
+        description: "Leer información de permisos"
+    },
+    {
+        id: "14",
+        name: "permissions.create",
+        description: "Crear nuevos permisos"
+    },
+    {
+        id: "15",
+        name: "permissions.update",
+        description: "Actualizar información de permisos"
+    },
+    {
+        id: "16",
+        name: "permissions.delete",
+        description: "Eliminar permisos"
+    }
+]
+
+// Sample data for roles
+export const roles: Role[] = [
+    {
+        id: "1",
+        name: "ADMIN",
+        clubId: "club-1",
+        permissions: [
+            { id: "1", name: "users.read", description: "Leer información de usuarios" },
+            { id: "2", name: "users.create", description: "Crear nuevos usuarios" },
+            { id: "3", name: "users.update", description: "Actualizar información de usuarios" },
+            { id: "4", name: "users.delete", description: "Eliminar usuarios" },
+            { id: "5", name: "members.read", description: "Leer información de miembros" },
+            { id: "6", name: "members.create", description: "Crear nuevos miembros" },
+            { id: "7", name: "members.update", description: "Actualizar información de miembros" },
+            { id: "8", name: "members.delete", description: "Eliminar miembros" },
+            { id: "9", name: "roles.read", description: "Leer información de roles" },
+            { id: "10", name: "roles.create", description: "Crear nuevos roles" },
+            { id: "11", name: "roles.update", description: "Actualizar información de roles" },
+            { id: "12", name: "roles.delete", description: "Eliminar roles" },
+            { id: "13", name: "permissions.read", description: "Leer información de permisos" },
+            { id: "14", name: "permissions.create", description: "Crear nuevos permisos" },
+            { id: "15", name: "permissions.update", description: "Actualizar información de permisos" },
+            { id: "16", name: "permissions.delete", description: "Eliminar permisos" }
+        ]
+    },
+    {
+        id: "2",
+        name: "MANAGER",
+        clubId: "club-1",
+        permissions: [
+            { id: "1", name: "users.read", description: "Leer información de usuarios" },
+            { id: "2", name: "users.create", description: "Crear nuevos usuarios" },
+            { id: "3", name: "users.update", description: "Actualizar información de usuarios" },
+            { id: "5", name: "members.read", description: "Leer información de miembros" },
+            { id: "6", name: "members.create", description: "Crear nuevos miembros" },
+            { id: "7", name: "members.update", description: "Actualizar información de miembros" },
+            { id: "9", name: "roles.read", description: "Leer información de roles" },
+            { id: "13", name: "permissions.read", description: "Leer información de permisos" }
+        ]
+    },
+    {
+        id: "3",
+        name: "MEMBER",
+        clubId: "club-1",
+        permissions: [
+            { id: "1", name: "users.read", description: "Leer información de usuarios" },
+            { id: "5", name: "members.read", description: "Leer información de miembros" }
+        ]
+    }
 ] 

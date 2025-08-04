@@ -15,6 +15,8 @@ import { MembersSection } from "./sections/MembersSection";
 import { UsersSection } from "./sections/UsersSection";
 import { SponsorsSection } from "./sections/SponsorsSection";
 import { PaymentsSection } from "./sections/PaymentsSection";
+import { PermissionsSection } from "./sections/PermissionsSection";
+import { RolesSection } from "./sections/RolesSection";
 
 // Importar datos y tipos
 import {
@@ -98,7 +100,7 @@ export function DesignaliCreative() {
             className="w-full"
           >
             <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <TabsList className="grid w-full max-w-[600px] grid-cols-5 rounded-2xl p-1">
+              <TabsList className="grid w-full max-w-[800px] grid-cols-7 rounded-2xl p-1">
                 <TabsTrigger
                   value="home"
                   className="rounded-xl data-[state=active]:rounded-xl"
@@ -128,6 +130,18 @@ export function DesignaliCreative() {
                   className="rounded-xl data-[state=active]:rounded-xl"
                 >
                   Payments
+                </TabsTrigger>
+                <TabsTrigger
+                  value="roles"
+                  className="rounded-xl data-[state=active]:rounded-xl"
+                >
+                  Roles
+                </TabsTrigger>
+                <TabsTrigger
+                  value="permissions"
+                  className="rounded-xl data-[state=active]:rounded-xl"
+                >
+                  Permissions
                 </TabsTrigger>
               </TabsList>
               <div className="hidden md:flex gap-2">
@@ -173,6 +187,14 @@ export function DesignaliCreative() {
 
                 <TabsContent value="payments" className="space-y-8 mt-0">
                   <PaymentsSection payments={payments} members={members} />
+                </TabsContent>
+
+                <TabsContent value="roles" className="space-y-8 mt-0">
+                  <RolesSection />
+                </TabsContent>
+
+                <TabsContent value="permissions" className="space-y-8 mt-0">
+                  <PermissionsSection />
                 </TabsContent>
               </motion.div>
             </AnimatePresence>

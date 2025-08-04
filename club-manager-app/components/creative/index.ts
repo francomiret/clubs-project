@@ -12,6 +12,8 @@ export { MembersSection } from "./sections/MembersSection"
 export { UsersSection } from "./sections/UsersSection"
 export { SponsorsSection } from "./sections/SponsorsSection"
 export { PaymentsSection } from "./sections/PaymentsSection"
+export { PermissionsSection } from "./sections/PermissionsSection"
+export { RolesSection } from "./sections/RolesSection"
 
 // Exportar tipos y datos
 export * from "./types"

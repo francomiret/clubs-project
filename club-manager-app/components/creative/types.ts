@@ -196,4 +196,52 @@ export interface UpdatePaymentData extends Partial<CreatePaymentData> {
     status?: "pending" | "completed" | "failed" | "refunded"
     transactionId?: string
     receiptUrl?: string
+}
+
+// Permission types
+export interface Permission {
+    id: string
+    name: string
+    description?: string
+}
+
+export interface CreatePermissionData {
+    name: string
+    description?: string
+}
+
+export interface UpdatePermissionData {
+    name?: string
+    description?: string
+}
+
+// Role types
+export interface Role {
+    id: string
+    name: string
+    clubId: string
+    permissions?: Array<{
+        id: string
+        name: string
+        description?: string
+    }>
+}
+
+export interface CreateRoleData {
+    name: string
+    clubId: string
+    permissionIds?: string[]
+}
+
+export interface UpdateRoleData {
+    name?: string
+    clubId?: string
+    permissionIds?: string[]
+}
+
+// User Role Assignment
+export interface AssignUserRoleData {
+    userId: string
+    clubId: string
+    roleId: string
 } 

@@ -1,7 +1,8 @@
 export interface Club {
     id: string;
     name: string;
-    users: User[];
+    users: UserClub[];
+    roles: Role[];
     members: Member[];
     sponsors: Sponsor[];
     payments: Payment[];
@@ -14,18 +15,43 @@ export interface User {
     email: string;
     password: string;
     name: string;
-    role: Role;
-    clubId: string;
-    club: Club;
+    clubs: UserClub[];
     createdAt: Date;
     updatedAt: Date;
 }
 
-export enum Role {
-    ADMIN = "ADMIN",
-    TREASURER = "TREASURER",
-    MEMBER = "MEMBER",
-    SPONSOR = "SPONSOR",
+export interface UserClub {
+    id: string;
+    userId: string;
+    clubId: string;
+    roleId: string;
+    user: User;
+    club: Club;
+    role: Role;
+}
+
+export interface Role {
+    id: string;
+    name: string;
+    clubId: string;
+    club: Club;
+    permissions: RolePermission[];
+    userClubs: UserClub[];
+}
+
+export interface Permission {
+    id: string;
+    name: string;
+    description?: string;
+    roles: RolePermission[];
+}
+
+export interface RolePermission {
+    id: string;
+    roleId: string;
+    permissionId: string;
+    role: Role;
+    permission: Permission;
 }
 
 export interface Member {
