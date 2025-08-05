@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -86,6 +87,7 @@ export function Header({
             </Tooltip>
           </TooltipProvider>
 
+          <LanguageSwitcher />
           <Avatar className="h-9 w-9 border-2 border-primary">
             <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
             <AvatarFallback>JD</AvatarFallback>

@@ -31,8 +31,10 @@ import {
   sponsors,
   payments,
 } from "./data";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function DesignaliCreative() {
+  const { t } = useLanguage();
   const [progress, setProgress] = useState(0);
   const [notifications, setNotifications] = useState(5);
   const [activeTab, setActiveTab] = useState("home");

@@ -72,6 +72,7 @@ import {
 import { Member, CreateMemberData, UpdateMemberData, Club } from "../types";
 import { IconRenderer } from "../IconRenderer";
 import { clubs } from "../data";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface MembersSectionProps {
   members: Member[];
@@ -86,6 +87,7 @@ export function MembersSection({
   onUpdateMember,
   onDeleteMember,
 }: MembersSectionProps) {
+  const { t } = useLanguage();
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [searchTerm, setSearchTerm] = useState("");
   const [clubFilter, setClubFilter] = useState<string>("all");
@@ -180,14 +182,14 @@ export function MembersSection({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Miembros</h2>
-          <p className="text-muted-foreground">
-            Gestiona los miembros del club
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {t("members.title")}
+          </h2>
+          <p className="text-muted-foreground">{t("members.subtitle")}</p>
         </div>
         <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Agregar Miembro
+          {t("members.addMember")}
         </Button>
       </div>
 
@@ -197,7 +199,7 @@ export function MembersSection({
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar miembros..."
+              placeholder={t("members.filters.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -205,10 +207,12 @@ export function MembersSection({
           </div>
           <Select value={clubFilter} onValueChange={setClubFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por club" />
+              <SelectValue placeholder={t("members.filters.filterByClub")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos los clubs</SelectItem>
+              <SelectItem value="all">
+                {t("members.filters.allClubs")}
+              </SelectItem>
               {clubs.map((club) => (
                 <SelectItem key={club.id} value={club.id}>
                   {club.name}

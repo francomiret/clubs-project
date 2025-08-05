@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { SidebarItem } from "./types";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SidebarProps {
   items: SidebarItem[];
@@ -27,6 +28,7 @@ export function Sidebar({
   onToggleSidebar,
   onToggleMobileMenu,
 }: SidebarProps) {
+  const { t } = useLanguage();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     {}
   );
@@ -69,7 +71,7 @@ export function Sidebar({
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search..."
+            placeholder={t("common.search")}
             className="w-full rounded-2xl bg-muted pl-9 pr-4 py-2"
           />
         </div>
