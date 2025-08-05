@@ -12,6 +12,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { SidebarItem } from "./types";
 import { useLanguage } from "@/contexts/LanguageContext";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface SidebarProps {
   items: SidebarItem[];
@@ -29,6 +31,7 @@ export function Sidebar({
   onToggleMobileMenu,
 }: SidebarProps) {
   const { t } = useLanguage();
+  const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     {}
   );
@@ -79,62 +82,92 @@ export function Sidebar({
 
       <ScrollArea className="flex-1 px-3 py-2">
         <div className="space-y-1">
-          {items.map((item) => (
-            <div key={item.title} className="mb-1">
-              <button
-                className={cn(
-                  "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium",
-                  item.isActive
-                    ? "bg-primary/10 text-primary"
-                    : "hover:bg-muted"
-                )}
-                onClick={() => item.items && toggleExpanded(item.title)}
-              >
-                <div className="flex items-center gap-3">
-                  <IconRenderer icon={item.icon} className="h-5 w-5" />
-                  <span>{item.title}</span>
-                </div>
-                {item.badge && (
-                  <Badge
-                    variant="outline"
-                    className="ml-auto rounded-full px-2 py-0.5 text-xs"
-                  >
-                    {item.badge}
-                  </Badge>
-                )}
-                {item.items && (
-                  <ChevronDown
-                    className={cn(
-                      "ml-2 h-4 w-4 transition-transform",
-                      expandedItems[item.title] ? "rotate-180" : ""
-                    )}
-                  />
-                )}
-              </button>
+          {items.map((item) => {
+            const isActive =
+              pathname === `/${item.title.toLowerCase()}` ||
+              (item.title.toLowerCase() === "home" && pathname === "/");
+            const href = item.items
+              ? undefined
+              : item.title.toLowerCase() === "home"
+              ? "/"
+              : `/${item.title.toLowerCase()}`;
 
-              {item.items && expandedItems[item.title] && (
-                <div className="mt-1 ml-6 space-y-1 border-l pl-3">
-                  {item.items.map((subItem) => (
-                    <a
-                      key={subItem.title}
-                      href={subItem.url}
-                      className="flex items-center justify-between rounded-2xl px-3 py-2 text-sm hover:bg-muted"
-                    >
-                      {subItem.title}
-                      {subItem.badge && (
-                        <Badge
-                          variant="outline"
-                          className="ml-auto rounded-full px-2 py-0.5 text-xs"
-                        >
-                          {subItem.badge}
-                        </Badge>
+            return (
+              <div key={item.title} className="mb-1">
+                {item.items ? (
+                  <button
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium",
+                      isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    )}
+                    onClick={() => toggleExpanded(item.title)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <IconRenderer icon={item.icon} className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </div>
+                    {item.badge && (
+                      <Badge
+                        variant="outline"
+                        className="ml-auto rounded-full px-2 py-0.5 text-xs"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                    <ChevronDown
+                      className={cn(
+                        "ml-2 h-4 w-4 transition-transform",
+                        expandedItems[item.title] ? "rotate-180" : ""
                       )}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href={href || "#"}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded-2xl px-3 py-2 text-sm font-medium",
+                      isActive ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <IconRenderer icon={item.icon} className="h-5 w-5" />
+                      <span>{item.title}</span>
+                    </div>
+                    {item.badge && (
+                      <Badge
+                        variant="outline"
+                        className="ml-auto rounded-full px-2 py-0.5 text-xs"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </Link>
+                )}
+
+                {item.items && expandedItems[item.title] && (
+                  <div className="mt-1 ml-6 space-y-1 border-l pl-3">
+                    {item.items.map((subItem) => (
+                      <Link
+                        key={subItem.title}
+                        href={subItem.url}
+                        className="flex items-center justify-between rounded-2xl px-3 py-2 text-sm hover:bg-muted"
+                      >
+                        {subItem.title}
+                        {subItem.badge && (
+                          <Badge
+                            variant="outline"
+                            className="ml-auto rounded-full px-2 py-0.5 text-xs"
+                          >
+                            {subItem.badge}
+                          </Badge>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
 
