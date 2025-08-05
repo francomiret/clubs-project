@@ -4,23 +4,23 @@ import { buildAuthUrl } from "@/lib/config";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { email, password } = body;
+        const { refreshToken } = body;
 
-        // Validar campos requeridos
-        if (!email || !password) {
+        // Validar que se proporcione el refresh token
+        if (!refreshToken) {
             return NextResponse.json(
-                { message: "Email y contraseña son requeridos" },
+                { message: "Refresh token es requerido" },
                 { status: 400 }
             );
         }
 
-        // Llamar al backend NestJS
-        const response = await fetch(buildAuthUrl("LOGIN"), {
+        // Llamar al backend NestJS para renovar el token
+        const response = await fetch(buildAuthUrl("REFRESH"), {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ refreshToken }),
         });
 
         const data = await response.json();
@@ -28,19 +28,19 @@ export async function POST(request: NextRequest) {
         if (!response.ok) {
             // Manejar errores del backend
             return NextResponse.json(
-                { message: data.message || "Error al iniciar sesión" },
+                { message: data.message || "Error al renovar el token" },
                 { status: response.status }
             );
         }
 
         // Retornar respuesta exitosa del backend
         return NextResponse.json({
-            token: data.accessToken,
+            accessToken: data.accessToken,
             refreshToken: data.refreshToken,
-            user: data.user,
+            expiresIn: data.expiresIn,
         });
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("Refresh token error:", error);
         return NextResponse.json(
             { message: "Error de conexión con el servidor" },
             { status: 500 }

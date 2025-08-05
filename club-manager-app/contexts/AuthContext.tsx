@@ -15,15 +15,22 @@ interface User {
   email: string;
   role: string;
   clubId?: string;
+  permissions?: string[];
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    clubName: string
+  ) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  refreshToken: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,13 +62,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
             const userData = await response.json();
             setUser(userData);
           } else {
-            // Token is invalid, remove it
-            localStorage.removeItem("authToken");
+            // Token is invalid, try to refresh
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+              try {
+                await refreshAuthToken();
+              } catch (error) {
+                // Refresh failed, remove tokens
+                localStorage.removeItem("authToken");
+                localStorage.removeItem("refreshToken");
+              }
+            } else {
+              localStorage.removeItem("authToken");
+            }
           }
         }
       } catch (error) {
         console.error("Auth check failed:", error);
         localStorage.removeItem("authToken");
+        localStorage.removeItem("refreshToken");
       } finally {
         setIsLoading(false);
       }
@@ -69,6 +88,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     checkAuth();
   }, []);
+
+  const refreshAuthToken = async () => {
+    const refreshToken = localStorage.getItem("refreshToken");
+    if (!refreshToken) {
+      throw new Error("No refresh token available");
+    }
+
+    const response = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to refresh token");
+    }
+
+    const data = await response.json();
+    localStorage.setItem("authToken", data.accessToken);
+    localStorage.setItem("refreshToken", data.refreshToken);
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -89,8 +131,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const data = await response.json();
 
-      // Store token
+      // Store tokens
       localStorage.setItem("authToken", data.token);
+      localStorage.setItem("refreshToken", data.refreshToken);
 
       // Set user data
       setUser(data.user);
@@ -105,7 +148,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    clubName: string
+  ) => {
     try {
       setIsLoading(true);
 
@@ -114,7 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, clubName }),
       });
 
       if (!response.ok) {
@@ -124,8 +172,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const data = await response.json();
 
-      // Store token
+      // Store tokens
       localStorage.setItem("authToken", data.token);
+      localStorage.setItem("refreshToken", data.refreshToken);
 
       // Set user data
       setUser(data.user);
@@ -141,14 +190,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const logout = () => {
-    // Remove token
+    // Remove tokens
     localStorage.removeItem("authToken");
+    localStorage.removeItem("refreshToken");
 
     // Clear user data
     setUser(null);
 
     // Redirect to login
     router.push("/login");
+  };
+
+  const refreshToken = async () => {
+    await refreshAuthToken();
   };
 
   const value: AuthContextType = {
@@ -158,6 +212,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     isAuthenticated: !!user,
+    refreshToken,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

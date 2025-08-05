@@ -29,6 +29,7 @@ export interface RegisterData {
   email: string;
   password: string;
   confirmPassword: string;
+  clubName: string;
   acceptTerms: boolean;
 }
 
@@ -43,6 +44,7 @@ export function RegisterForm({
     email: "",
     password: "",
     confirmPassword: "",
+    clubName: "",
     acceptTerms: false,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -56,6 +58,13 @@ export function RegisterForm({
       newErrors.name = "El nombre es requerido";
     } else if (formData.name.trim().length < 2) {
       newErrors.name = "El nombre debe tener al menos 2 caracteres";
+    }
+
+    if (!formData.clubName.trim()) {
+      newErrors.clubName = "El nombre del club es requerido";
+    } else if (formData.clubName.trim().length < 3) {
+      newErrors.clubName =
+        "El nombre del club debe tener al menos 3 caracteres";
     }
 
     if (!formData.email) {
@@ -165,6 +174,29 @@ export function RegisterForm({
                 </div>
                 {errors.name && (
                   <p className="text-sm text-red-500">{errors.name}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="clubName">Nombre del Club</Label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    id="clubName"
+                    type="text"
+                    placeholder="Nombre de tu club deportivo"
+                    value={formData.clubName}
+                    onChange={(e) =>
+                      handleInputChange("clubName", e.target.value)
+                    }
+                    className={`pl-10 ${
+                      errors.clubName ? "border-red-500" : ""
+                    }`}
+                    disabled={isLoading}
+                  />
+                </div>
+                {errors.clubName && (
+                  <p className="text-sm text-red-500">{errors.clubName}</p>
                 )}
               </div>
 

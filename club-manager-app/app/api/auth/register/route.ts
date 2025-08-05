@@ -1,34 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Mock user data - en producción esto vendría de la base de datos
-let mockUsers = [
-    {
-        id: "1",
-        name: "Admin User",
-        email: "admin@club.com",
-        password: "admin123",
-        role: "admin",
-        clubId: "club-1",
-    },
-    {
-        id: "2",
-        name: "Juan Pérez",
-        email: "juan@club.com",
-        password: "user123",
-        role: "user",
-        clubId: "club-1",
-    },
-];
+import { buildAuthUrl, SYSTEM_CONFIG } from "@/lib/config";
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { name, email, password } = body;
+        const { name, email, password, clubName } = body;
 
         // Validar campos requeridos
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !clubName) {
             return NextResponse.json(
-                { message: "Nombre, email y contraseña son requeridos" },
+                { message: "Nombre, email, contraseña y nombre del club son requeridos" },
                 { status: 400 }
             );
         }
@@ -50,46 +31,40 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Verificar si el email ya existe
-        const existingUser = mockUsers.find((u) => u.email === email);
-        if (existingUser) {
+        // Llamar al backend NestJS
+        const response = await fetch(buildAuthUrl("REGISTER"), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name,
+                email,
+                password,
+                clubName,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Manejar errores del backend
             return NextResponse.json(
-                { message: "El email ya está registrado" },
-                { status: 409 }
+                { message: data.message || "Error al registrar usuario" },
+                { status: response.status }
             );
         }
 
-        // Crear nuevo usuario
-        const newUser = {
-            id: (mockUsers.length + 1).toString(),
-            name,
-            email,
-            password, // En producción esto estaría hasheado
-            role: "user", // Por defecto es usuario normal
-            clubId: "club-1", // Asignar al club principal
-        };
-
-        // Agregar a la lista (en producción esto se guardaría en la base de datos)
-        mockUsers.push(newUser);
-
-        // En producción, aquí generarías un JWT token real
-        const token = `mock-jwt-token-${newUser.id}-${Date.now()}`;
-
-        // Retornar respuesta exitosa
+        // Retornar respuesta exitosa del backend
         return NextResponse.json({
-            token,
-            user: {
-                id: newUser.id,
-                name: newUser.name,
-                email: newUser.email,
-                role: newUser.role,
-                clubId: newUser.clubId,
-            },
+            token: data.accessToken,
+            refreshToken: data.refreshToken,
+            user: data.user,
         });
     } catch (error) {
         console.error("Registration error:", error);
         return NextResponse.json(
-            { message: "Error interno del servidor" },
+            { message: "Error de conexión con el servidor" },
             { status: 500 }
         );
     }

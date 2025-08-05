@@ -10,10 +10,10 @@ export default function RegisterPage() {
   const [error, setError] = useState<string>("");
 
   const handleRegister = async (data: RegisterData) => {
-    const { name, email, password } = data;
+    const { name, email, password, clubName } = data;
     try {
       setError("");
-      await register(name, email, password);
+      await register(name, email, password, clubName);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al registrar usuario"

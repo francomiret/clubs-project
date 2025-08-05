@@ -100,12 +100,92 @@ export class AuthService {
             name: registerDto.name,
         });
 
-        // Crear relación UserClub
+        // Crear el club
+        const club = await this.prisma.club.create({
+            data: {
+                name: registerDto.clubName,
+            },
+        });
+
+        // Crear roles básicos para el club
+        const adminRole = await this.prisma.role.create({
+            data: {
+                name: 'ADMIN',
+                clubId: club.id,
+            },
+        });
+
+        const managerRole = await this.prisma.role.create({
+            data: {
+                name: 'MANAGER',
+                clubId: club.id,
+            },
+        });
+
+        const memberRole = await this.prisma.role.create({
+            data: {
+                name: 'MEMBER',
+                clubId: club.id,
+            },
+        });
+
+        // Asignar permisos básicos a los roles
+        const basicPermissions = await this.prisma.permission.findMany({
+            where: {
+                name: {
+                    in: ['users.read', 'users.create', 'users.update', 'users.delete']
+                }
+            }
+        });
+
+        // Asignar todos los permisos al rol ADMIN
+        await Promise.all(
+            basicPermissions.map(permission =>
+                this.prisma.rolePermission.create({
+                    data: {
+                        roleId: adminRole.id,
+                        permissionId: permission.id,
+                    },
+                })
+            )
+        );
+
+        // Asignar permisos limitados al rol MANAGER
+        const managerPermissions = basicPermissions.filter(p =>
+            ['users.read', 'users.create', 'users.update'].includes(p.name)
+        );
+        await Promise.all(
+            managerPermissions.map(permission =>
+                this.prisma.rolePermission.create({
+                    data: {
+                        roleId: managerRole.id,
+                        permissionId: permission.id,
+                    },
+                })
+            )
+        );
+
+        // Asignar permisos básicos al rol MEMBER
+        const memberPermissions = basicPermissions.filter(p =>
+            ['users.read'].includes(p.name)
+        );
+        await Promise.all(
+            memberPermissions.map(permission =>
+                this.prisma.rolePermission.create({
+                    data: {
+                        roleId: memberRole.id,
+                        permissionId: permission.id,
+                    },
+                })
+            )
+        );
+
+        // Crear relación UserClub con rol de ADMIN
         await this.prisma.userClub.create({
             data: {
                 userId: user.id,
-                clubId: registerDto.clubId,
-                roleId: registerDto.roleId,
+                clubId: club.id,
+                roleId: adminRole.id,
             },
         });
 
@@ -118,7 +198,9 @@ export class AuthService {
                 id: user.id,
                 email: user.email,
                 name: user.name,
-                permissions: [],
+                clubId: club.id,
+                role: 'ADMIN',
+                permissions: basicPermissions.map(p => p.name),
             },
         };
     }
