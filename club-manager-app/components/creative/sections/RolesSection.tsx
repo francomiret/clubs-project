@@ -262,9 +262,8 @@ export function RolesSection() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="club-1">
-                      Club Deportivo Ejemplo
+                      Club Deportivo Central
                     </SelectItem>
-                    <SelectItem value="club-2">Club Deportivo 2</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

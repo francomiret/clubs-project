@@ -33,6 +33,9 @@ export interface Translations {
         payments: string;
         roles: string;
         permissions: string;
+
+        properties: string;
+        activities: string;
     };
 
     // Home
@@ -291,6 +294,9 @@ export const translations: Record<Locale, Translations> = {
                 totalUsers: 'Total Users',
                 totalSponsors: 'Total Sponsors',
                 totalPayments: 'Total Payments',
+
+                totalProperties: 'Total Properties',
+                totalActivities: 'Total Activities',
             },
         },
         members: {
@@ -515,6 +521,9 @@ export const translations: Record<Locale, Translations> = {
             payments: 'Pagos',
             roles: 'Roles',
             permissions: 'Permisos',
+            clubs: 'Club',
+            properties: 'Propiedades',
+            activities: 'Actividades',
         },
         home: {
             title: 'Panel de Gestión del Club',
@@ -524,6 +533,9 @@ export const translations: Record<Locale, Translations> = {
                 totalUsers: 'Total de Usuarios',
                 totalSponsors: 'Total de Sponsors',
                 totalPayments: 'Total de Pagos',
+
+                totalProperties: 'Total de Propiedades',
+                totalActivities: 'Total de Actividades',
             },
         },
         members: {
@@ -715,6 +727,73 @@ export const translations: Record<Locale, Translations> = {
                 deleteSuccess: 'Permiso eliminado exitosamente',
                 addSuccess: 'Permiso agregado exitosamente',
                 updateSuccess: 'Permiso actualizado exitosamente',
+            },
+        },
+
+
+
+        // Properties
+        properties: {
+            title: 'Properties',
+            subtitle: 'Manage club properties',
+            addProperty: 'Add Property',
+            editProperty: 'Edit Property',
+            deleteProperty: 'Delete Property',
+            propertyDetails: 'Property Details',
+            form: {
+                name: 'Name',
+                location: 'Location',
+                characteristics: 'Characteristics',
+                club: 'Club',
+                selectClub: 'Select club',
+                addCharacteristic: 'Add characteristic',
+            },
+            table: {
+                name: 'Name',
+                location: 'Location',
+                characteristics: 'Characteristics',
+                club: 'Club',
+                actions: 'Actions',
+            },
+            filters: {
+                searchPlaceholder: 'Search properties...',
+            },
+            messages: {
+                deleteConfirm: 'This action cannot be undone. This will permanently delete the property.',
+                deleteSuccess: 'Property deleted successfully',
+                addSuccess: 'Property added successfully',
+                updateSuccess: 'Property updated successfully',
+            },
+        },
+
+        // Activities
+        activities: {
+            title: 'Activities',
+            subtitle: 'Manage club activities',
+            addActivity: 'Add Activity',
+            editActivity: 'Edit Activity',
+            deleteActivity: 'Delete Activity',
+            activityDetails: 'Activity Details',
+            form: {
+                name: 'Name',
+                description: 'Description',
+                club: 'Club',
+                selectClub: 'Select club',
+            },
+            table: {
+                name: 'Name',
+                description: 'Description',
+                club: 'Club',
+                actions: 'Actions',
+            },
+            filters: {
+                searchPlaceholder: 'Search activities...',
+            },
+            messages: {
+                deleteConfirm: 'This action cannot be undone. This will permanently delete the activity.',
+                deleteSuccess: 'Activity deleted successfully',
+                addSuccess: 'Activity added successfully',
+                updateSuccess: 'Activity updated successfully',
             },
         },
     },

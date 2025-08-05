@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -9,6 +10,10 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   members,
@@ -17,6 +22,9 @@ import {
   payments,
   roles,
   permissions,
+  clubs,
+  properties,
+  activities,
 } from "@/components/creative/data";
 import {
   Users,
@@ -29,56 +37,134 @@ import {
   Activity,
   Calendar,
   BarChart3,
+  MapPin,
+  Edit,
+  Save,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { Club, UpdateClubData } from "@/components/creative/types";
 
 export default function HomePage() {
   const { t } = useLanguage();
+  const [club, setClub] = useState<Club>(clubs[0]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<UpdateClubData>({
+    name: clubs[0].name,
+    alias: clubs[0].alias || "",
+    logo: clubs[0].logo || "",
+    location: clubs[0].location || "",
+    foundationDate: clubs[0].foundationDate
+      ? clubs[0].foundationDate.toISOString().split("T")[0]
+      : undefined,
+    description: clubs[0].description || "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updatedClub: Club = {
+      ...club,
+      ...formData,
+      foundationDate: formData.foundationDate
+        ? new Date(formData.foundationDate)
+        : undefined,
+    };
+    setClub(updatedClub);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: club.name,
+      alias: club.alias || "",
+      logo: club.logo || "",
+      location: club.location || "",
+      foundationDate: club.foundationDate
+        ? club.foundationDate.toISOString().split("T")[0]
+        : undefined,
+      description: club.description || "",
+    });
+    setIsEditing(false);
+  };
 
   const stats = [
+    {
+      title: t("home.stats.totalProperties"),
+      value: properties.length,
+      icon: MapPin,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+      href: "/properties",
+    },
+    {
+      title: t("home.stats.totalActivities"),
+      value: activities.length,
+      icon: Activity,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+      href: "/activities",
+    },
     {
       title: t("home.stats.totalMembers"),
       value: members.length,
       icon: Users,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
       href: "/members",
     },
     {
       title: t("home.stats.totalUsers"),
       value: users.length,
       icon: User,
-      color: "text-green-600",
-      bgColor: "bg-green-100",
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
       href: "/users",
     },
     {
       title: t("home.stats.totalSponsors"),
       value: sponsors.length,
       icon: Building,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
+      color: "text-red-600",
+      bgColor: "bg-red-100",
       href: "/sponsors",
     },
     {
       title: t("home.stats.totalPayments"),
       value: payments.length,
       icon: DollarSign,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-100",
       href: "/payments",
     },
   ];
 
   const sections = [
     {
+      title: t("navigation.properties"),
+      description: t("properties.subtitle"),
+      icon: MapPin,
+      href: "/properties",
+      count: properties.length,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      title: t("navigation.activities"),
+      description: t("activities.subtitle"),
+      icon: Activity,
+      href: "/activities",
+      count: activities.length,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+    },
+    {
       title: t("navigation.members"),
       description: t("members.subtitle"),
       icon: Users,
       href: "/members",
       count: members.length,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
     },
     {
       title: t("navigation.users"),
@@ -86,8 +172,8 @@ export default function HomePage() {
       icon: User,
       href: "/users",
       count: users.length,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
     },
     {
       title: t("navigation.sponsors"),
@@ -95,8 +181,8 @@ export default function HomePage() {
       icon: Building,
       href: "/sponsors",
       count: sponsors.length,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      color: "text-red-600",
+      bgColor: "bg-red-50",
     },
     {
       title: t("navigation.payments"),
@@ -104,8 +190,8 @@ export default function HomePage() {
       icon: DollarSign,
       href: "/payments",
       count: payments.length,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50",
     },
     {
       title: t("navigation.roles"),
@@ -113,8 +199,8 @@ export default function HomePage() {
       icon: Shield,
       href: "/roles",
       count: roles.length,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
+      color: "text-gray-600",
+      bgColor: "bg-gray-50",
     },
     {
       title: t("navigation.permissions"),
@@ -122,8 +208,8 @@ export default function HomePage() {
       icon: Key,
       href: "/permissions",
       count: permissions.length,
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-50",
+      color: "text-pink-600",
+      bgColor: "bg-pink-50",
     },
   ];
 
@@ -153,6 +239,169 @@ export default function HomePage() {
 
   return (
     <div className="space-y-6">
+      {/* Club Information Card */}
+      <Card className="max-w-4xl">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src={club.logo} alt={club.name} />
+                <AvatarFallback>
+                  <Building className="h-10 w-10" />
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                {isEditing ? (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">{t("clubs.form.name")}</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) =>
+                            setFormData({ ...formData, name: e.target.value })
+                          }
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="alias">{t("clubs.form.alias")}</Label>
+                        <Input
+                          id="alias"
+                          value={formData.alias}
+                          onChange={(e) =>
+                            setFormData({ ...formData, alias: e.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="logo">{t("clubs.form.logo")}</Label>
+                        <Input
+                          id="logo"
+                          value={formData.logo}
+                          onChange={(e) =>
+                            setFormData({ ...formData, logo: e.target.value })
+                          }
+                          placeholder="URL del logo"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="location">
+                          {t("clubs.form.location")}
+                        </Label>
+                        <Input
+                          id="location"
+                          value={formData.location}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              location: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="foundationDate">
+                          {t("clubs.form.foundationDate")}
+                        </Label>
+                        <Input
+                          id="foundationDate"
+                          type="date"
+                          value={formData.foundationDate}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              foundationDate: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">
+                        {t("clubs.form.description")}
+                      </Label>
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            description: e.target.value,
+                          })
+                        }
+                        rows={4}
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancel}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit">
+                        <Save className="mr-2 h-4 w-4" />
+                        Guardar Cambios
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <CardTitle className="text-2xl">{club.name}</CardTitle>
+                      {club.alias && (
+                        <Badge variant="outline" className="mt-2">
+                          {club.alias}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {club.location && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{club.location}</span>
+                        </div>
+                      )}
+                      {club.foundationDate && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            Fundado {club.foundationDate.toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {club.description && (
+                      <div>
+                        <h4 className="font-medium mb-2">Descripción</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {club.description}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            {!isEditing && (
+              <Button
+                onClick={() => setIsEditing(true)}
+                variant="outline"
+                size="sm"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Editar Club
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+      </Card>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

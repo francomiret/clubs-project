@@ -213,11 +213,52 @@ export interface AssignUserRoleData {
 export interface Club {
     id: string
     name: string
+    alias?: string
+    logo?: string
+    location?: string
+    foundationDate?: Date
+    description?: string
     users?: UserClub[]
     roles?: Role[]
     members?: Member[]
     sponsors?: Sponsor[]
     payments?: Payment[]
+    properties?: Property[]
+    activities?: Activity[]
     createdAt?: Date
     updatedAt?: Date
-} 
+}
+
+// Property types
+export interface Property {
+    id: string
+    name: string
+    location: string
+    characteristics: string[]
+    createdAt?: Date
+    updatedAt?: Date
+}
+
+export interface CreatePropertyData {
+    name: string
+    location: string
+    characteristics: string[]
+}
+
+export interface UpdatePropertyData extends Partial<CreatePropertyData> { }
+
+// Activity types
+export interface Activity {
+    id: string
+    name: string
+    description?: string
+    createdAt?: Date
+    updatedAt?: Date
+}
+
+export interface CreateActivityData {
+    name: string
+    description?: string
+}
+
+export interface UpdateActivityData extends Partial<CreateActivityData> { } 

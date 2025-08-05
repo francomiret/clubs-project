@@ -1,13 +1,37 @@
 export interface Club {
     id: string;
     name: string;
+    alias?: string;
+    logo?: string;
+    location?: string;
+    foundationDate?: Date;
+    description?: string;
     users: UserClub[];
     roles: Role[];
     members: Member[];
     sponsors: Sponsor[];
     payments: Payment[];
+    properties: Property[];
+    activities: Activity[];
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface Property {
+    id: string;
+    name: string;
+    location: string;
+    characteristics: string[];
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+export interface Activity {
+    id: string;
+    name: string;
+    description?: string;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface User {

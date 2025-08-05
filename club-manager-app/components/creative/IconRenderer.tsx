@@ -51,6 +51,8 @@ import {
   Briefcase,
   CreditCard,
   Key,
+  MapPin,
+  Activity,
 } from "lucide-react";
 
 interface IconRendererProps {
@@ -109,6 +111,8 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Briefcase,
   CreditCard,
   Key,
+  MapPin,
+  Activity,
 };
 
 export function IconRenderer({ icon, className }: IconRendererProps) {

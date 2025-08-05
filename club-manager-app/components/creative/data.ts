@@ -1,4 +1,4 @@
-import { SidebarItem, App, RecentFile, Project, Tutorial, CommunityPost, Member, User, Sponsor, Payment, Permission, Role, Club, UserClub } from "./types"
+import { SidebarItem, App, RecentFile, Project, Tutorial, CommunityPost, Member, User, Sponsor, Payment, Permission, Role, Club, UserClub, Property, Activity } from "./types"
 
 // Sample data for apps
 export const apps: App[] = [
@@ -307,6 +307,17 @@ export const sidebarItems: SidebarItem[] = [
         icon: "Home",
         isActive: true,
     },
+
+    {
+        title: "Properties",
+        icon: "MapPin",
+        badge: "4",
+    },
+    {
+        title: "Activities",
+        icon: "Activity",
+        badge: "5",
+    },
     {
         title: "Members",
         icon: "Users",
@@ -334,7 +345,7 @@ export const sidebarItems: SidebarItem[] = [
     },
     {
         title: "Permissions",
-        icon: "Settings",
+        icon: "Key",
         badge: "16",
     },
 ]
@@ -383,10 +394,10 @@ export const members: Member[] = [
         id: "4",
         name: "David Kim",
         email: "david.kim@designali.com",
-        clubId: "club-2",
+        clubId: "club-1",
         club: {
-            id: "club-2",
-            name: "Club Deportivo 2"
+            id: "club-1",
+            name: "Club Deportivo Central"
         },
         createdAt: createDate("2023-09-05"),
     },
@@ -416,10 +427,10 @@ export const members: Member[] = [
         id: "7",
         name: "Olivia Chen",
         email: "olivia.chen@designali.com",
-        clubId: "club-2",
+        clubId: "club-1",
         club: {
-            id: "club-2",
-            name: "Club Deportivo 2"
+            id: "club-1",
+            name: "Club Deportivo Central"
         },
         createdAt: createDate("2023-02-20"),
     },
@@ -508,10 +519,10 @@ export const sponsors: Sponsor[] = [
         id: "3",
         name: "InnovateLab Solutions",
         email: "contact@innovatelab.com",
-        clubId: "club-2",
+        clubId: "club-1",
         club: {
-            id: "club-2",
-            name: "Club Deportivo 2"
+            id: "club-1",
+            name: "Club Deportivo Central"
         },
         createdAt: new Date("2024-06-01"),
     },
@@ -539,7 +550,7 @@ export const payments: Payment[] = [
         clubId: "club-1",
         club: {
             id: "club-1",
-            name: "Club Deportivo Ejemplo"
+            name: "Club Deportivo Central"
         },
         member: {
             id: "1",
@@ -917,20 +928,94 @@ export const roles: Role[] = [
     }
 ]
 
-// Sample data for clubs
+// Sample data for clubs (single club)
 export const clubs: Club[] = [
     {
         id: "club-1",
-        name: "Club Deportivo Ejemplo",
-        createdAt: new Date("2024-01-01"),
-        updatedAt: new Date("2024-01-01")
+        name: "Club Deportivo Central",
+        alias: "CDC",
+        logo: "/placeholder-logo.png",
+        location: "Av. Central 123, Ciudad",
+        foundationDate: createDate("1990-05-15"),
+        description: "Club deportivo con más de 30 años de historia, dedicado al desarrollo del deporte y la comunidad.",
+        createdAt: createDate("2024-01-01"),
+        updatedAt: createDate("2024-01-01")
+    }
+]
+
+// Sample data for properties
+export const properties: Property[] = [
+    {
+        id: "1",
+        name: "Estadio Principal",
+        location: "Av. Central 123, Ciudad",
+        characteristics: ["Cancha de fútbol", "Gradas", "Vestuarios", "Iluminación"],
+        createdAt: createDate("2020-01-15"),
+        updatedAt: createDate("2023-06-20"),
     },
     {
-        id: "club-2",
-        name: "Club Deportivo 2",
-        createdAt: new Date("2024-01-15"),
-        updatedAt: new Date("2024-01-15")
-    }
+        id: "2",
+        name: "Piscina Olímpica",
+        location: "Av. Central 123, Ciudad",
+        characteristics: ["Pileta olímpica", "Pileta de entrenamiento", "Vestuarios", "Calefacción"],
+        createdAt: createDate("2018-03-10"),
+        updatedAt: createDate("2022-12-15"),
+    },
+    {
+        id: "3",
+        name: "Cancha de Hockey",
+        location: "Calle Norte 456, Ciudad",
+        characteristics: ["Cancha de hockey", "Césped sintético", "Vestuarios", "Iluminación"],
+        createdAt: createDate("2019-07-22"),
+        updatedAt: createDate("2023-01-30"),
+    },
+    {
+        id: "4",
+        name: "Gimnasio Multideportivo",
+        location: "Boulevard Sur 789, Ciudad",
+        characteristics: ["Gimnasio", "Cancha de básquet", "Cancha de vóley", "Sala de pesas"],
+        createdAt: createDate("2021-04-05"),
+        updatedAt: createDate("2023-08-12"),
+    },
+]
+
+// Sample data for activities
+export const activities: Activity[] = [
+    {
+        id: "1",
+        name: "Fútbol",
+        description: "Escuela de fútbol para todas las edades",
+        createdAt: createDate("2020-02-01"),
+        updatedAt: createDate("2023-09-15"),
+    },
+    {
+        id: "2",
+        name: "Natación",
+        description: "Clases de natación para principiantes y avanzados",
+        createdAt: createDate("2018-04-01"),
+        updatedAt: createDate("2023-07-20"),
+    },
+    {
+        id: "3",
+        name: "Hockey",
+        description: "Equipo de hockey femenino y masculino",
+        createdAt: createDate("2019-08-01"),
+        updatedAt: createDate("2023-10-05"),
+    },
+    {
+        id: "4",
+        name: "Básquet",
+        description: "Liga de básquet local",
+        createdAt: createDate("2021-05-01"),
+        updatedAt: createDate("2023-11-10"),
+    },
+    {
+        id: "5",
+        name: "Vóley",
+        description: "Equipos de vóley recreativo y competitivo",
+        createdAt: createDate("2021-06-01"),
+        updatedAt: createDate("2023-12-01"),
+    },
 ]
 
 // Sample data for user clubs (user-role-club relationships)
