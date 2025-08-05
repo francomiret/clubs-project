@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Club, UpdateClubData } from "@/components/creative/types";
+import { formatDate } from "@/lib/utils";
 
 export default function HomePage() {
   const { t } = useLanguage();
@@ -369,9 +370,7 @@ export default function HomePage() {
                       {club.foundationDate && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Calendar className="h-4 w-4" />
-                          <span>
-                            Fundado {club.foundationDate.toLocaleDateString()}
-                          </span>
+                          <span>Fundado {formatDate(club.foundationDate)}</span>
                         </div>
                       )}
                     </div>

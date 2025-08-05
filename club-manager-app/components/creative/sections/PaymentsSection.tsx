@@ -79,6 +79,7 @@ import {
 } from "../types";
 import { IconRenderer } from "../IconRenderer";
 import { members, sponsors, clubs } from "../data";
+import { formatDate } from "@/lib/utils";
 
 interface PaymentsSectionProps {
   payments: Payment[];
@@ -107,8 +108,8 @@ export function PaymentsSection({
     amount: 0,
     description: "",
     date: new Date(),
-    memberId: "",
-    sponsorId: "",
+    memberId: "none",
+    sponsorId: "none",
     clubId: "club-1",
   });
 
@@ -132,12 +133,14 @@ export function PaymentsSection({
     if (selectedPayment) {
       // Update existing payment
       const selectedClub = clubs.find((c) => c.id === formData.clubId);
-      const selectedMember = formData.memberId
-        ? members.find((m) => m.id === formData.memberId)
-        : undefined;
-      const selectedSponsor = formData.sponsorId
-        ? sponsors.find((s) => s.id === formData.sponsorId)
-        : undefined;
+      const selectedMember =
+        formData.memberId && formData.memberId !== "none"
+          ? members.find((m) => m.id === formData.memberId)
+          : undefined;
+      const selectedSponsor =
+        formData.sponsorId && formData.sponsorId !== "none"
+          ? sponsors.find((s) => s.id === formData.sponsorId)
+          : undefined;
 
       const updatedPayment: Payment = {
         ...selectedPayment,
@@ -154,12 +157,14 @@ export function PaymentsSection({
     } else {
       // Add new payment
       const selectedClub = clubs.find((c) => c.id === formData.clubId);
-      const selectedMember = formData.memberId
-        ? members.find((m) => m.id === formData.memberId)
-        : undefined;
-      const selectedSponsor = formData.sponsorId
-        ? sponsors.find((s) => s.id === formData.sponsorId)
-        : undefined;
+      const selectedMember =
+        formData.memberId && formData.memberId !== "none"
+          ? members.find((m) => m.id === formData.memberId)
+          : undefined;
+      const selectedSponsor =
+        formData.sponsorId && formData.sponsorId !== "none"
+          ? sponsors.find((s) => s.id === formData.sponsorId)
+          : undefined;
 
       const newPayment: Payment = {
         id: Date.now().toString(),
@@ -178,8 +183,8 @@ export function PaymentsSection({
       amount: 0,
       description: "",
       date: new Date(),
-      memberId: "",
-      sponsorId: "",
+      memberId: "none",
+      sponsorId: "none",
       clubId: "club-1",
     });
     setSelectedPayment(null);
@@ -198,8 +203,8 @@ export function PaymentsSection({
       amount: payment.amount,
       description: payment.description || "",
       date: payment.date,
-      memberId: payment.memberId || "",
-      sponsorId: payment.sponsorId || "",
+      memberId: payment.memberId || "none",
+      sponsorId: payment.sponsorId || "none",
       clubId: payment.clubId,
     });
     setIsEditDialogOpen(true);
@@ -363,7 +368,7 @@ export function PaymentsSection({
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>{new Date(payment.date).toLocaleDateString()}</span>
+                      <span>{formatDate(payment.date)}</span>
                     </div>
                     {payment.description && (
                       <div className="text-sm text-muted-foreground">
@@ -420,9 +425,7 @@ export function PaymentsSection({
                       {payment.club?.name || "Sin club"}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {new Date(payment.date).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{formatDate(payment.date)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -557,14 +560,18 @@ export function PaymentsSection({
               <Select
                 value={formData.memberId}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, memberId: value, sponsorId: "" })
+                  setFormData({
+                    ...formData,
+                    memberId: value,
+                    sponsorId: "none",
+                  })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar miembro" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin miembro</SelectItem>
+                  <SelectItem value="none">Sin miembro</SelectItem>
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
@@ -578,14 +585,18 @@ export function PaymentsSection({
               <Select
                 value={formData.sponsorId}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, sponsorId: value, memberId: "" })
+                  setFormData({
+                    ...formData,
+                    sponsorId: value,
+                    memberId: "none",
+                  })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar sponsor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin sponsor</SelectItem>
+                  <SelectItem value="none">Sin sponsor</SelectItem>
                   {sponsors.map((sponsor) => (
                     <SelectItem key={sponsor.id} value={sponsor.id}>
                       {sponsor.name}
@@ -685,14 +696,18 @@ export function PaymentsSection({
               <Select
                 value={formData.memberId}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, memberId: value, sponsorId: "" })
+                  setFormData({
+                    ...formData,
+                    memberId: value,
+                    sponsorId: "none",
+                  })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar miembro" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin miembro</SelectItem>
+                  <SelectItem value="none">Sin miembro</SelectItem>
                   {members.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name}
@@ -706,14 +721,18 @@ export function PaymentsSection({
               <Select
                 value={formData.sponsorId}
                 onValueChange={(value) =>
-                  setFormData({ ...formData, sponsorId: value, memberId: "" })
+                  setFormData({
+                    ...formData,
+                    sponsorId: value,
+                    memberId: "none",
+                  })
                 }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar sponsor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin sponsor</SelectItem>
+                  <SelectItem value="none">Sin sponsor</SelectItem>
                   {sponsors.map((sponsor) => (
                     <SelectItem key={sponsor.id} value={sponsor.id}>
                       {sponsor.name}
@@ -759,7 +778,7 @@ export function PaymentsSection({
               <div>
                 <Label>Fecha</Label>
                 <p className="text-sm text-muted-foreground">
-                  {new Date(selectedPayment.date).toLocaleDateString()}
+                  {formatDate(selectedPayment.date)}
                 </p>
               </div>
               <div>

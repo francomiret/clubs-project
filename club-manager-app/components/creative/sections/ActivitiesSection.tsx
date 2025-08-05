@@ -52,6 +52,7 @@ import {
 } from "../types";
 
 import { useLanguage } from "@/contexts/LanguageContext";
+import { formatDate } from "@/lib/utils";
 
 interface ActivitiesSectionProps {
   activities: ActivityType[];
@@ -226,9 +227,7 @@ export function ActivitiesSection({
                   {activity.createdAt && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>
-                        Creada {activity.createdAt.toLocaleDateString()}
-                      </span>
+                      <span>Creada {formatDate(activity.createdAt)}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 pt-2">
@@ -298,7 +297,7 @@ export function ActivitiesSection({
                         {activity.createdAt && (
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {activity.createdAt.toLocaleDateString()}
+                            {formatDate(activity.createdAt)}
                           </span>
                         )}
                       </div>
@@ -462,9 +461,7 @@ export function ActivitiesSection({
               {selectedActivity.createdAt && (
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4" />
-                  <span>
-                    Creada {selectedActivity.createdAt.toLocaleDateString()}
-                  </span>
+                  <span>Creada {formatDate(selectedActivity.createdAt)}</span>
                 </div>
               )}
             </div>
