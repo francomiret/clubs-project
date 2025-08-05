@@ -43,6 +43,14 @@ import {
   Lightbulb,
   TrendingUp,
   Crown,
+  User,
+  Building,
+  DollarSign,
+  Shield,
+  UserPlus,
+  Briefcase,
+  CreditCard,
+  Key,
 } from "lucide-react";
 
 interface IconRendererProps {
@@ -93,6 +101,14 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Lightbulb,
   TrendingUp,
   Crown,
+  User,
+  Building,
+  DollarSign,
+  Shield,
+  UserPlus,
+  Briefcase,
+  CreditCard,
+  Key,
 };
 
 export function IconRenderer({ icon, className }: IconRendererProps) {

@@ -1,4 +1,4 @@
-import { SidebarItem, App, RecentFile, Project, Tutorial, CommunityPost, Member, User, Sponsor, Payment, Permission, Role } from "./types"
+import { SidebarItem, App, RecentFile, Project, Tutorial, CommunityPost, Member, User, Sponsor, Payment, Permission, Role, Club, UserClub } from "./types"
 
 // Sample data for apps
 export const apps: App[] = [
@@ -314,7 +314,7 @@ export const sidebarItems: SidebarItem[] = [
     },
     {
         title: "Users",
-        icon: "UserPlus",
+        icon: "User",
         badge: "5",
     },
     {
@@ -329,7 +329,7 @@ export const sidebarItems: SidebarItem[] = [
     },
     {
         title: "Roles",
-        icon: "ShieldCheck",
+        icon: "Shield",
         badge: "3",
     },
     {
@@ -339,127 +339,100 @@ export const sidebarItems: SidebarItem[] = [
     },
 ]
 
+// Helper function to create consistent dates
+const createDate = (dateString: string) => {
+    return new Date(dateString);
+};
+
 // Sample data for members
 export const members: Member[] = [
     {
         id: "1",
         name: "Sarah Chen",
         email: "sarah.chen@designali.com",
-        role: "Senior UI/UX Designer",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "March 2023",
-        lastActive: "2 hours ago",
-        projects: 8,
-        skills: ["Figma", "Sketch", "Adobe XD", "Prototyping", "User Research"],
-        department: "Design",
-        phone: "+1 (555) 123-4567",
-        location: "San Francisco, CA",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2023-03-01"),
     },
     {
         id: "2",
         name: "Michael Rodriguez",
         email: "michael.rodriguez@designali.com",
-        role: "Creative Director",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "January 2022",
-        lastActive: "1 day ago",
-        projects: 12,
-        skills: ["Creative Direction", "Brand Strategy", "Team Leadership", "Adobe Creative Suite"],
-        department: "Creative",
-        phone: "+1 (555) 234-5678",
-        location: "New York, NY",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2022-01-15"),
     },
     {
         id: "3",
         name: "Emma Thompson",
         email: "emma.thompson@designali.com",
-        role: "Graphic Designer",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "June 2023",
-        lastActive: "30 minutes ago",
-        projects: 5,
-        skills: ["Illustrator", "Photoshop", "InDesign", "Typography", "Print Design"],
-        department: "Design",
-        phone: "+1 (555) 345-6789",
-        location: "Los Angeles, CA",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2023-06-10"),
     },
     {
         id: "4",
         name: "David Kim",
         email: "david.kim@designali.com",
-        role: "Motion Graphics Artist",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "September 2023",
-        lastActive: "3 hours ago",
-        projects: 6,
-        skills: ["After Effects", "Cinema 4D", "Motion Design", "3D Animation"],
-        department: "Motion",
-        phone: "+1 (555) 456-7890",
-        location: "Austin, TX",
+        clubId: "club-2",
+        club: {
+            id: "club-2",
+            name: "Club Deportivo 2"
+        },
+        createdAt: createDate("2023-09-05"),
     },
     {
         id: "5",
         name: "Priya Sharma",
         email: "priya.sharma@designali.com",
-        role: "Product Designer",
-        status: "pending",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "December 2024",
-        lastActive: "1 week ago",
-        projects: 2,
-        skills: ["Product Design", "User Experience", "Prototyping", "Design Systems"],
-        department: "Product",
-        phone: "+1 (555) 567-8901",
-        location: "Seattle, WA",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2024-12-01"),
     },
     {
         id: "6",
         name: "Alex Morgan",
         email: "alex.morgan@designali.com",
-        role: "Frontend Developer",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "April 2023",
-        lastActive: "5 minutes ago",
-        projects: 10,
-        skills: ["React", "TypeScript", "CSS", "JavaScript", "UI Development"],
-        department: "Engineering",
-        phone: "+1 (555) 678-9012",
-        location: "Boston, MA",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2023-04-15"),
     },
     {
         id: "7",
         name: "Olivia Chen",
         email: "olivia.chen@designali.com",
-        role: "Marketing Designer",
-        status: "inactive",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "February 2023",
-        lastActive: "2 weeks ago",
-        projects: 4,
-        skills: ["Marketing Design", "Social Media", "Branding", "Adobe Creative Suite"],
-        department: "Marketing",
-        phone: "+1 (555) 789-0123",
-        location: "Chicago, IL",
+        clubId: "club-2",
+        club: {
+            id: "club-2",
+            name: "Club Deportivo 2"
+        },
+        createdAt: createDate("2023-02-20"),
     },
     {
         id: "8",
         name: "Thomas Wright",
         email: "thomas.wright@designali.com",
-        role: "3D Artist",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "July 2023",
-        lastActive: "1 hour ago",
-        projects: 7,
-        skills: ["Blender", "Maya", "3D Modeling", "Texturing", "Rendering"],
-        department: "3D",
-        phone: "+1 (555) 890-1234",
-        location: "Portland, OR",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2023-07-25"),
     },
 ]
 
@@ -467,78 +440,43 @@ export const members: Member[] = [
 export const users: User[] = [
     {
         id: "1",
-        username: "admin",
         email: "admin@designali.com",
-        fullName: "Administrator",
-        role: "admin",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "January 2022",
-        lastLogin: "2 hours ago",
-        permissions: ["all"],
-        department: "IT",
-        phone: "+1 (555) 000-0001",
-        location: "San Francisco, CA",
+        password: "hashed_password_1",
+        name: "Administrator",
+        createdAt: createDate("2022-01-01"),
+        updatedAt: createDate("2024-01-01"),
     },
     {
         id: "2",
-        username: "manager1",
         email: "manager@designali.com",
-        fullName: "John Manager",
-        role: "manager",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "March 2023",
-        lastLogin: "1 day ago",
-        permissions: ["read", "write", "delete"],
-        department: "Management",
-        phone: "+1 (555) 000-0002",
-        location: "New York, NY",
+        password: "hashed_password_2",
+        name: "John Manager",
+        createdAt: createDate("2023-03-15"),
+        updatedAt: createDate("2024-01-01"),
     },
     {
         id: "3",
-        username: "user1",
         email: "user@designali.com",
-        fullName: "Alice User",
-        role: "user",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "June 2023",
-        lastLogin: "30 minutes ago",
-        permissions: ["read", "write"],
-        department: "Design",
-        phone: "+1 (555) 000-0003",
-        location: "Los Angeles, CA",
+        password: "hashed_password_3",
+        name: "Alice User",
+        createdAt: createDate("2023-06-20"),
+        updatedAt: createDate("2024-01-01"),
     },
     {
         id: "4",
-        username: "guest1",
         email: "guest@designali.com",
-        fullName: "Bob Guest",
-        role: "guest",
-        status: "active",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "September 2023",
-        lastLogin: "1 week ago",
-        permissions: ["read"],
-        department: "Marketing",
-        phone: "+1 (555) 000-0004",
-        location: "Chicago, IL",
+        password: "hashed_password_4",
+        name: "Bob Guest",
+        createdAt: createDate("2023-09-10"),
+        updatedAt: createDate("2024-01-01"),
     },
     {
         id: "5",
-        username: "suspended1",
         email: "suspended@designali.com",
-        fullName: "Charlie Suspended",
-        role: "user",
-        status: "suspended",
-        avatar: "/placeholder.svg?height=40&width=40",
-        joinDate: "April 2023",
-        lastLogin: "2 weeks ago",
-        permissions: ["read"],
-        department: "Engineering",
-        phone: "+1 (555) 000-0005",
-        location: "Boston, MA",
+        password: "hashed_password_5",
+        name: "Charlie Suspended",
+        createdAt: createDate("2023-04-05"),
+        updatedAt: createDate("2024-01-01"),
     },
 ]
 
@@ -546,75 +484,47 @@ export const users: User[] = [
 export const sponsors: Sponsor[] = [
     {
         id: "1",
-        name: "TechCorp",
-        company: "TechCorp Industries",
+        name: "TechCorp Industries",
         email: "sponsor@techcorp.com",
-        phone: "+1 (555) 100-0001",
-        website: "https://techcorp.com",
-        logo: "/placeholder.svg?height=40&width=40",
-        status: "active",
-        sponsorshipLevel: "platinum",
-        startDate: "2024-01-01",
-        endDate: "2024-12-31",
-        amount: 50000,
-        currency: "USD",
-        description: "Platinum sponsorship for annual events",
-        contactPerson: "Sarah Johnson",
-        notes: "Very reliable sponsor, always pays on time",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2024-01-01"),
     },
     {
         id: "2",
-        name: "DesignHub",
-        company: "DesignHub Creative",
+        name: "DesignHub Creative",
         email: "partnership@designhub.com",
-        phone: "+1 (555) 100-0002",
-        website: "https://designhub.com",
-        logo: "/placeholder.svg?height=40&width=40",
-        status: "active",
-        sponsorshipLevel: "gold",
-        startDate: "2024-03-01",
-        endDate: "2024-08-31",
-        amount: 25000,
-        currency: "USD",
-        description: "Gold sponsorship for design workshops",
-        contactPerson: "Mike Chen",
-        notes: "Interested in expanding partnership",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: createDate("2024-03-01"),
     },
     {
         id: "3",
-        name: "InnovateLab",
-        company: "InnovateLab Solutions",
+        name: "InnovateLab Solutions",
         email: "contact@innovatelab.com",
-        phone: "+1 (555) 100-0003",
-        website: "https://innovatelab.com",
-        logo: "/placeholder.svg?height=40&width=40",
-        status: "pending",
-        sponsorshipLevel: "silver",
-        startDate: "2024-06-01",
-        endDate: "2024-11-30",
-        amount: 15000,
-        currency: "USD",
-        description: "Silver sponsorship for innovation events",
-        contactPerson: "Lisa Wang",
-        notes: "New sponsor, needs follow-up",
+        clubId: "club-2",
+        club: {
+            id: "club-2",
+            name: "Club Deportivo 2"
+        },
+        createdAt: new Date("2024-06-01"),
     },
     {
         id: "4",
-        name: "CreativeFlow",
-        company: "CreativeFlow Agency",
+        name: "CreativeFlow Agency",
         email: "hello@creativeflow.com",
-        phone: "+1 (555) 100-0004",
-        website: "https://creativeflow.com",
-        logo: "/placeholder.svg?height=40&width=40",
-        status: "inactive",
-        sponsorshipLevel: "bronze",
-        startDate: "2023-09-01",
-        endDate: "2024-02-29",
-        amount: 5000,
-        currency: "USD",
-        description: "Bronze sponsorship for creative events",
-        contactPerson: "David Kim",
-        notes: "Contract expired, considering renewal",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        createdAt: new Date("2023-09-01"),
     },
 ]
 
@@ -622,97 +532,111 @@ export const sponsors: Sponsor[] = [
 export const payments: Payment[] = [
     {
         id: "1",
-        memberId: "1",
-        memberName: "Sarah Chen",
         amount: 150,
-        currency: "USD",
-        status: "completed",
-        paymentMethod: "credit_card",
-        transactionId: "TXN-001-2024",
-        date: "2024-01-15",
-        dueDate: "2024-01-15",
         description: "Annual membership fee",
-        category: "membership",
-        receiptUrl: "/receipts/txn-001.pdf",
-        notes: "Paid on time",
+        date: new Date("2024-01-15"),
+        memberId: "1",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        member: {
+            id: "1",
+            name: "Sarah Chen",
+            email: "sarah.chen@designali.com",
+            clubId: "club-1"
+        }
     },
     {
         id: "2",
-        memberId: "2",
-        memberName: "Michael Rodriguez",
         amount: 75,
-        currency: "USD",
-        status: "pending",
-        paymentMethod: "bank_transfer",
-        transactionId: "TXN-002-2024",
-        date: "2024-01-20",
-        dueDate: "2024-01-25",
         description: "Workshop registration fee",
-        category: "event",
-        notes: "Awaiting bank confirmation",
+        date: new Date("2024-01-20"),
+        memberId: "2",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        member: {
+            id: "2",
+            name: "Michael Rodriguez",
+            email: "michael.rodriguez@designali.com",
+            clubId: "club-1"
+        }
     },
     {
         id: "3",
-        memberId: "3",
-        memberName: "Emma Thompson",
         amount: 200,
-        currency: "USD",
-        status: "completed",
-        paymentMethod: "paypal",
-        transactionId: "TXN-003-2024",
-        date: "2024-01-18",
-        dueDate: "2024-01-18",
         description: "Premium membership upgrade",
-        category: "membership",
-        receiptUrl: "/receipts/txn-003.pdf",
-        notes: "Upgraded from basic to premium",
+        date: new Date("2024-01-18"),
+        memberId: "3",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        member: {
+            id: "3",
+            name: "Emma Thompson",
+            email: "emma.thompson@designali.com",
+            clubId: "club-1"
+        }
     },
     {
         id: "4",
-        memberId: "4",
-        memberName: "David Kim",
-        amount: 50,
-        currency: "USD",
-        status: "failed",
-        paymentMethod: "credit_card",
-        transactionId: "TXN-004-2024",
-        date: "2024-01-22",
-        dueDate: "2024-01-22",
-        description: "Event ticket",
-        category: "event",
-        notes: "Card declined, needs follow-up",
+        amount: 50000,
+        description: "Platinum sponsorship payment",
+        date: new Date("2024-01-22"),
+        sponsorId: "1",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        sponsor: {
+            id: "1",
+            name: "TechCorp Industries",
+            email: "sponsor@techcorp.com",
+            clubId: "club-1"
+        }
     },
     {
         id: "5",
-        memberId: "5",
-        memberName: "Priya Sharma",
-        amount: 100,
-        currency: "USD",
-        status: "refunded",
-        paymentMethod: "credit_card",
-        transactionId: "TXN-005-2024",
-        date: "2024-01-10",
-        dueDate: "2024-01-10",
-        description: "Workshop fee",
-        category: "event",
-        receiptUrl: "/receipts/txn-005.pdf",
-        notes: "Refunded due to cancellation",
+        amount: 25000,
+        description: "Gold sponsorship payment",
+        date: new Date("2024-01-10"),
+        sponsorId: "2",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        sponsor: {
+            id: "2",
+            name: "DesignHub Creative",
+            email: "partnership@designhub.com",
+            clubId: "club-1"
+        }
     },
     {
         id: "6",
-        memberId: "6",
-        memberName: "Alex Morgan",
         amount: 300,
-        currency: "USD",
-        status: "completed",
-        paymentMethod: "cash",
-        transactionId: "TXN-006-2024",
-        date: "2024-01-25",
-        dueDate: "2024-01-25",
         description: "Annual membership + events package",
-        category: "membership",
-        receiptUrl: "/receipts/txn-006.pdf",
-        notes: "Paid in cash at office",
+        date: new Date("2024-01-25"),
+        memberId: "6",
+        clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        member: {
+            id: "6",
+            name: "Alex Morgan",
+            email: "alex.morgan@designali.com",
+            clubId: "club-1"
+        }
     },
 ]
 
@@ -806,47 +730,278 @@ export const roles: Role[] = [
         id: "1",
         name: "ADMIN",
         clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
         permissions: [
-            { id: "1", name: "users.read", description: "Leer información de usuarios" },
-            { id: "2", name: "users.create", description: "Crear nuevos usuarios" },
-            { id: "3", name: "users.update", description: "Actualizar información de usuarios" },
-            { id: "4", name: "users.delete", description: "Eliminar usuarios" },
-            { id: "5", name: "members.read", description: "Leer información de miembros" },
-            { id: "6", name: "members.create", description: "Crear nuevos miembros" },
-            { id: "7", name: "members.update", description: "Actualizar información de miembros" },
-            { id: "8", name: "members.delete", description: "Eliminar miembros" },
-            { id: "9", name: "roles.read", description: "Leer información de roles" },
-            { id: "10", name: "roles.create", description: "Crear nuevos roles" },
-            { id: "11", name: "roles.update", description: "Actualizar información de roles" },
-            { id: "12", name: "roles.delete", description: "Eliminar roles" },
-            { id: "13", name: "permissions.read", description: "Leer información de permisos" },
-            { id: "14", name: "permissions.create", description: "Crear nuevos permisos" },
-            { id: "15", name: "permissions.update", description: "Actualizar información de permisos" },
-            { id: "16", name: "permissions.delete", description: "Eliminar permisos" }
+            {
+                id: "rp-1",
+                roleId: "1",
+                permissionId: "1",
+                permission: { id: "1", name: "users.read", description: "Leer información de usuarios" }
+            },
+            {
+                id: "rp-2",
+                roleId: "1",
+                permissionId: "2",
+                permission: { id: "2", name: "users.create", description: "Crear nuevos usuarios" }
+            },
+            {
+                id: "rp-3",
+                roleId: "1",
+                permissionId: "3",
+                permission: { id: "3", name: "users.update", description: "Actualizar información de usuarios" }
+            },
+            {
+                id: "rp-4",
+                roleId: "1",
+                permissionId: "4",
+                permission: { id: "4", name: "users.delete", description: "Eliminar usuarios" }
+            },
+            {
+                id: "rp-5",
+                roleId: "1",
+                permissionId: "5",
+                permission: { id: "5", name: "members.read", description: "Leer información de miembros" }
+            },
+            {
+                id: "rp-6",
+                roleId: "1",
+                permissionId: "6",
+                permission: { id: "6", name: "members.create", description: "Crear nuevos miembros" }
+            },
+            {
+                id: "rp-7",
+                roleId: "1",
+                permissionId: "7",
+                permission: { id: "7", name: "members.update", description: "Actualizar información de miembros" }
+            },
+            {
+                id: "rp-8",
+                roleId: "1",
+                permissionId: "8",
+                permission: { id: "8", name: "members.delete", description: "Eliminar miembros" }
+            },
+            {
+                id: "rp-9",
+                roleId: "1",
+                permissionId: "9",
+                permission: { id: "9", name: "roles.read", description: "Leer información de roles" }
+            },
+            {
+                id: "rp-10",
+                roleId: "1",
+                permissionId: "10",
+                permission: { id: "10", name: "roles.create", description: "Crear nuevos roles" }
+            },
+            {
+                id: "rp-11",
+                roleId: "1",
+                permissionId: "11",
+                permission: { id: "11", name: "roles.update", description: "Actualizar información de roles" }
+            },
+            {
+                id: "rp-12",
+                roleId: "1",
+                permissionId: "12",
+                permission: { id: "12", name: "roles.delete", description: "Eliminar roles" }
+            },
+            {
+                id: "rp-13",
+                roleId: "1",
+                permissionId: "13",
+                permission: { id: "13", name: "permissions.read", description: "Leer información de permisos" }
+            },
+            {
+                id: "rp-14",
+                roleId: "1",
+                permissionId: "14",
+                permission: { id: "14", name: "permissions.create", description: "Crear nuevos permisos" }
+            },
+            {
+                id: "rp-15",
+                roleId: "1",
+                permissionId: "15",
+                permission: { id: "15", name: "permissions.update", description: "Actualizar información de permisos" }
+            },
+            {
+                id: "rp-16",
+                roleId: "1",
+                permissionId: "16",
+                permission: { id: "16", name: "permissions.delete", description: "Eliminar permisos" }
+            }
         ]
     },
     {
         id: "2",
         name: "MANAGER",
         clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
         permissions: [
-            { id: "1", name: "users.read", description: "Leer información de usuarios" },
-            { id: "2", name: "users.create", description: "Crear nuevos usuarios" },
-            { id: "3", name: "users.update", description: "Actualizar información de usuarios" },
-            { id: "5", name: "members.read", description: "Leer información de miembros" },
-            { id: "6", name: "members.create", description: "Crear nuevos miembros" },
-            { id: "7", name: "members.update", description: "Actualizar información de miembros" },
-            { id: "9", name: "roles.read", description: "Leer información de roles" },
-            { id: "13", name: "permissions.read", description: "Leer información de permisos" }
+            {
+                id: "rp-17",
+                roleId: "2",
+                permissionId: "1",
+                permission: { id: "1", name: "users.read", description: "Leer información de usuarios" }
+            },
+            {
+                id: "rp-18",
+                roleId: "2",
+                permissionId: "2",
+                permission: { id: "2", name: "users.create", description: "Crear nuevos usuarios" }
+            },
+            {
+                id: "rp-19",
+                roleId: "2",
+                permissionId: "3",
+                permission: { id: "3", name: "users.update", description: "Actualizar información de usuarios" }
+            },
+            {
+                id: "rp-20",
+                roleId: "2",
+                permissionId: "5",
+                permission: { id: "5", name: "members.read", description: "Leer información de miembros" }
+            },
+            {
+                id: "rp-21",
+                roleId: "2",
+                permissionId: "6",
+                permission: { id: "6", name: "members.create", description: "Crear nuevos miembros" }
+            },
+            {
+                id: "rp-22",
+                roleId: "2",
+                permissionId: "7",
+                permission: { id: "7", name: "members.update", description: "Actualizar información de miembros" }
+            },
+            {
+                id: "rp-23",
+                roleId: "2",
+                permissionId: "9",
+                permission: { id: "9", name: "roles.read", description: "Leer información de roles" }
+            },
+            {
+                id: "rp-24",
+                roleId: "2",
+                permissionId: "13",
+                permission: { id: "13", name: "permissions.read", description: "Leer información de permisos" }
+            }
         ]
     },
     {
         id: "3",
         name: "MEMBER",
         clubId: "club-1",
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
         permissions: [
-            { id: "1", name: "users.read", description: "Leer información de usuarios" },
-            { id: "5", name: "members.read", description: "Leer información de miembros" }
+            {
+                id: "rp-25",
+                roleId: "3",
+                permissionId: "1",
+                permission: { id: "1", name: "users.read", description: "Leer información de usuarios" }
+            },
+            {
+                id: "rp-26",
+                roleId: "3",
+                permissionId: "5",
+                permission: { id: "5", name: "members.read", description: "Leer información de miembros" }
+            }
         ]
+    }
+]
+
+// Sample data for clubs
+export const clubs: Club[] = [
+    {
+        id: "club-1",
+        name: "Club Deportivo Ejemplo",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01")
+    },
+    {
+        id: "club-2",
+        name: "Club Deportivo 2",
+        createdAt: new Date("2024-01-15"),
+        updatedAt: new Date("2024-01-15")
+    }
+]
+
+// Sample data for user clubs (user-role-club relationships)
+export const userClubs: UserClub[] = [
+    {
+        id: "uc-1",
+        userId: "1", // admin user
+        clubId: "club-1",
+        roleId: "1", // ADMIN role
+        user: {
+            id: "1",
+            email: "admin@designali.com",
+            password: "hashed_password_1",
+            name: "Administrator",
+            createdAt: new Date("2022-01-01"),
+            updatedAt: new Date("2024-01-01"),
+        },
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        role: {
+            id: "1",
+            name: "ADMIN",
+            clubId: "club-1"
+        }
+    },
+    {
+        id: "uc-2",
+        userId: "2", // manager user
+        clubId: "club-1",
+        roleId: "2", // MANAGER role
+        user: {
+            id: "2",
+            email: "manager@designali.com",
+            password: "hashed_password_2",
+            name: "John Manager",
+            createdAt: new Date("2023-03-15"),
+            updatedAt: new Date("2024-01-01"),
+        },
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        role: {
+            id: "2",
+            name: "MANAGER",
+            clubId: "club-1"
+        }
+    },
+    {
+        id: "uc-3",
+        userId: "3", // member user
+        clubId: "club-1",
+        roleId: "3", // MEMBER role
+        user: {
+            id: "3",
+            email: "user@designali.com",
+            password: "hashed_password_3",
+            name: "Alice User",
+            createdAt: new Date("2023-06-20"),
+            updatedAt: new Date("2024-01-01"),
+        },
+        club: {
+            id: "club-1",
+            name: "Club Deportivo Ejemplo"
+        },
+        role: {
+            id: "3",
+            name: "MEMBER",
+            clubId: "club-1"
+        }
     }
 ] 

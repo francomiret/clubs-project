@@ -11,13 +11,10 @@ import {
   Eye,
   DollarSign,
   Calendar,
-  CreditCard,
-  CheckCircle,
-  XCircle,
-  Clock,
-  RotateCcw,
   User,
-  Tag,
+  Building,
+  Grid3X3,
+  List,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,13 +27,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -80,11 +74,14 @@ import {
   CreatePaymentData,
   UpdatePaymentData,
   Member,
+  Sponsor,
+  Club,
 } from "../types";
+import { IconRenderer } from "../IconRenderer";
+import { members, sponsors, clubs } from "../data";
 
 interface PaymentsSectionProps {
   payments: Payment[];
-  members: Member[];
   onAddPayment?: (payment: CreatePaymentData) => void;
   onUpdatePayment?: (id: string, payment: UpdatePaymentData) => void;
   onDeletePayment?: (id: string) => void;
@@ -92,15 +89,13 @@ interface PaymentsSectionProps {
 
 export function PaymentsSection({
   payments: initialPayments,
-  members,
   onAddPayment,
   onUpdatePayment,
   onDeletePayment,
 }: PaymentsSectionProps) {
   const [payments, setPayments] = useState<Payment[]>(initialPayments);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [clubFilter, setClubFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
@@ -109,27 +104,25 @@ export function PaymentsSection({
 
   // Form states
   const [formData, setFormData] = useState<CreatePaymentData>({
-    memberId: "",
     amount: 0,
-    currency: "USD",
-    paymentMethod: "credit_card",
-    dueDate: "",
     description: "",
-    category: "membership",
-    notes: "",
+    date: new Date(),
+    memberId: "",
+    sponsorId: "",
+    clubId: "club-1",
   });
 
   // Filter payments
   const filteredPayments = payments.filter((payment) => {
+    const memberName = payment.member?.name || payment.sponsor?.name || "";
     const matchesSearch =
-      payment.memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || payment.status === statusFilter;
-    const matchesCategory =
-      categoryFilter === "all" || payment.category === categoryFilter;
+      memberName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment.description?.toLowerCase() || "").includes(
+        searchTerm.toLowerCase()
+      );
+    const matchesClub = clubFilter === "all" || payment.clubId === clubFilter;
 
-    return matchesSearch && matchesStatus && matchesCategory;
+    return matchesSearch && matchesClub;
   });
 
   // Handle form submission
@@ -138,7 +131,21 @@ export function PaymentsSection({
 
     if (selectedPayment) {
       // Update existing payment
-      const updatedPayment = { ...selectedPayment, ...formData };
+      const selectedClub = clubs.find((c) => c.id === formData.clubId);
+      const selectedMember = formData.memberId
+        ? members.find((m) => m.id === formData.memberId)
+        : undefined;
+      const selectedSponsor = formData.sponsorId
+        ? sponsors.find((s) => s.id === formData.sponsorId)
+        : undefined;
+
+      const updatedPayment: Payment = {
+        ...selectedPayment,
+        ...formData,
+        club: selectedClub,
+        member: selectedMember,
+        sponsor: selectedSponsor,
+      };
       setPayments(
         payments.map((p) => (p.id === selectedPayment.id ? updatedPayment : p))
       );
@@ -146,15 +153,20 @@ export function PaymentsSection({
       setIsEditDialogOpen(false);
     } else {
       // Add new payment
-      const member = members.find((m) => m.id === formData.memberId);
+      const selectedClub = clubs.find((c) => c.id === formData.clubId);
+      const selectedMember = formData.memberId
+        ? members.find((m) => m.id === formData.memberId)
+        : undefined;
+      const selectedSponsor = formData.sponsorId
+        ? sponsors.find((s) => s.id === formData.sponsorId)
+        : undefined;
+
       const newPayment: Payment = {
         id: Date.now().toString(),
         ...formData,
-        memberName: member?.name || "Unknown Member",
-        status: "pending",
-        transactionId: `TXN-${Date.now()}`,
-        date: new Date().toISOString().split("T")[0],
-        receiptUrl: undefined,
+        club: selectedClub,
+        member: selectedMember,
+        sponsor: selectedSponsor,
       };
       setPayments([...payments, newPayment]);
       onAddPayment?.(formData);
@@ -163,14 +175,12 @@ export function PaymentsSection({
 
     // Reset form
     setFormData({
-      memberId: "",
       amount: 0,
-      currency: "USD",
-      paymentMethod: "credit_card",
-      dueDate: "",
       description: "",
-      category: "membership",
-      notes: "",
+      date: new Date(),
+      memberId: "",
+      sponsorId: "",
+      clubId: "club-1",
     });
     setSelectedPayment(null);
   };
@@ -185,14 +195,12 @@ export function PaymentsSection({
   const handleEdit = (payment: Payment) => {
     setSelectedPayment(payment);
     setFormData({
-      memberId: payment.memberId,
       amount: payment.amount,
-      currency: payment.currency,
-      paymentMethod: payment.paymentMethod,
-      dueDate: payment.dueDate,
-      description: payment.description,
-      category: payment.category,
-      notes: payment.notes || "",
+      description: payment.description || "",
+      date: payment.date,
+      memberId: payment.memberId || "",
+      sponsorId: payment.sponsorId || "",
+      clubId: payment.clubId,
     });
     setIsEditDialogOpen(true);
   };
@@ -203,358 +211,139 @@ export function PaymentsSection({
     setIsViewDialogOpen(true);
   };
 
-  // Get status icon
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4" />;
-      case "failed":
-        return <XCircle className="h-4 w-4" />;
-      case "pending":
-        return <Clock className="h-4 w-4" />;
-      case "refunded":
-        return <RotateCcw className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
-  };
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <section>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="overflow-hidden rounded-3xl bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 p-8 text-white"
-        >
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold">Payment Management</h2>
-              <p className="max-w-[600px] text-white/80">
-                Track and manage all payment transactions and financial records.
-              </p>
-            </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-fit rounded-2xl bg-white text-orange-700 hover:bg-white/90">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Payment
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Add New Payment</DialogTitle>
-                  <DialogDescription>
-                    Record a new payment transaction.
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="memberId">Member</Label>
-                    <Select
-                      value={formData.memberId}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, memberId: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select member" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {members.map((member) => (
-                          <SelectItem key={member.id} value={member.id}>
-                            {member.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount">Amount</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        step="0.01"
-                        value={formData.amount}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            amount: Number(e.target.value),
-                          })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Currency</Label>
-                      <Select
-                        value={formData.currency}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, currency: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select currency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="USD">USD</SelectItem>
-                          <SelectItem value="EUR">EUR</SelectItem>
-                          <SelectItem value="GBP">GBP</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="paymentMethod">Payment Method</Label>
-                      <Select
-                        value={formData.paymentMethod}
-                        onValueChange={(value: any) =>
-                          setFormData({ ...formData, paymentMethod: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select method" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="credit_card">
-                            Credit Card
-                          </SelectItem>
-                          <SelectItem value="bank_transfer">
-                            Bank Transfer
-                          </SelectItem>
-                          <SelectItem value="paypal">PayPal</SelectItem>
-                          <SelectItem value="cash">Cash</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="dueDate">Due Date</Label>
-                      <Input
-                        id="dueDate"
-                        type="date"
-                        value={formData.dueDate}
-                        onChange={(e) =>
-                          setFormData({ ...formData, dueDate: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Category</Label>
-                      <Select
-                        value={formData.category}
-                        onValueChange={(value: any) =>
-                          setFormData({ ...formData, category: value })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="membership">Membership</SelectItem>
-                          <SelectItem value="event">Event</SelectItem>
-                          <SelectItem value="donation">Donation</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Input
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="notes">Notes (optional)</Label>
-                    <Textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) =>
-                        setFormData({ ...formData, notes: e.target.value })
-                      }
-                    />
-                  </div>
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsAddDialogOpen(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit">Add Payment</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </motion.div>
-      </section>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Pagos</h2>
+          <p className="text-muted-foreground">Gestiona los pagos del club</p>
+        </div>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Agregar Pago
+        </Button>
+      </div>
 
-      {/* Filters and View Toggle */}
-      <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex flex-wrap gap-3 flex-1">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+      {/* Filters and Search */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center space-x-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search payments..."
+              placeholder="Buscar pagos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-8"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
+          <Select value={clubFilter} onValueChange={setClubFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por club" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="refunded">Refunded</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="membership">Membership</SelectItem>
-              <SelectItem value="event">Event</SelectItem>
-              <SelectItem value="donation">Donation</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
+              <SelectItem value="all">Todos los clubs</SelectItem>
+              {clubs.map((club) => (
+                <SelectItem key={club.id} value={club.id}>
+                  {club.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
-
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+        <div className="flex items-center space-x-2">
           <Button
-            variant={viewMode === "cards" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setViewMode("cards")}
-            className="h-8 px-3"
-          >
-            <DollarSign className="h-4 w-4 mr-2" />
-            Cards
-          </Button>
-          <Button
-            variant={viewMode === "grid" ? "default" : "ghost"}
+            variant={viewMode === "grid" ? "default" : "outline"}
             size="sm"
             onClick={() => setViewMode("grid")}
-            className="h-8 px-3"
           >
-            <Search className="h-4 w-4 mr-2" />
-            Grid
+            <Grid3X3 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={viewMode === "cards" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setViewMode("cards")}
+          >
+            <List className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      {/* Payments View */}
-      <AnimatePresence mode="wait">
-        {viewMode === "cards" ? (
-          <motion.div
-            key="cards"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-          >
+      {/* Payments Grid/Table */}
+      {viewMode === "cards" ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence>
             {filteredPayments.map((payment) => (
               <motion.div
                 key={payment.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.2 }}
               >
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                <Card>
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage
-                            src="/placeholder.svg?height=40&width=40"
-                            alt={payment.memberName}
-                          />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src="/placeholder.svg?height=40&width=40" />
                           <AvatarFallback>
-                            {payment.memberName
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
+                            <DollarSign className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <CardTitle className="text-lg">
-                            {payment.memberName}
+                            ${payment.amount.toLocaleString()}
                           </CardTitle>
                           <CardDescription>
-                            {payment.transactionId}
+                            {payment.member?.name ||
+                              payment.sponsor?.name ||
+                              "Sin nombre"}
                           </CardDescription>
                         </div>
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                          >
+                          <Button variant="ghost" size="sm">
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => handleView(payment)}>
                             <Eye className="mr-2 h-4 w-4" />
-                            View Details
+                            Ver Detalles
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleEdit(payment)}>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit Payment
+                            Editar
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem
                                 onSelect={(e) => e.preventDefault()}
+                                className="text-red-600"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Payment
+                                Eliminar
                               </DropdownMenuItem>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  Are you sure?
+                                  ¿Estás seguro?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This action cannot be undone. This will
-                                  permanently delete the payment record.
+                                  Esta acción no se puede deshacer. Esto
+                                  eliminará permanentemente el pago.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                 <AlertDialogAction
                                   onClick={() => handleDelete(payment.id)}
+                                  className="bg-red-600 hover:bg-red-700"
                                 >
-                                  Delete
+                                  Eliminar
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
@@ -564,288 +353,431 @@ export function PaymentsSection({
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="gap-1">
-                        {getStatusIcon(payment.status)}
-                        {payment.status}
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline">
+                        {payment.club?.name || "Sin club"}
                       </Badge>
-                      <Badge variant="secondary" className="gap-1">
-                        <CreditCard className="h-4 w-4" />
-                        {payment.paymentMethod.replace("_", " ")}
+                      <Badge variant="secondary">
+                        {payment.member ? "Miembro" : "Sponsor"}
                       </Badge>
                     </div>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <DollarSign className="h-4 w-4" />
-                        <span className="font-medium">
-                          {payment.currency} {payment.amount.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Tag className="h-4 w-4" />
-                        <span>{payment.category}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>Due: {payment.dueDate}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>Paid: {payment.date}</span>
-                      </div>
+                    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(payment.date).toLocaleDateString()}</span>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Description</Label>
-                      <div className="text-sm">{payment.description}</div>
-                    </div>
+                    {payment.description && (
+                      <div className="text-sm text-muted-foreground">
+                        {payment.description}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
             ))}
-          </motion.div>
-        ) : (
-          <motion.div
-            key="grid"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-4"
-          >
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Member</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPayments.map((payment) => (
-                    <TableRow key={payment.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src="/placeholder.svg?height=40&width=40"
-                              alt={payment.memberName}
-                            />
-                            <AvatarFallback className="text-xs">
-                              {payment.memberName
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">
-                              {payment.memberName}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {payment.description}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">
-                          {payment.currency} {payment.amount.toLocaleString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="gap-1">
-                          {getStatusIcon(payment.status)}
-                          {payment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="gap-1">
-                          <CreditCard className="h-4 w-4" />
-                          {payment.paymentMethod.replace("_", " ")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{payment.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{payment.dueDate}</div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          </AnimatePresence>
+        </div>
+      ) : (
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Monto</TableHead>
+                <TableHead>Descripción</TableHead>
+                <TableHead>Miembro/Sponsor</TableHead>
+                <TableHead>Club</TableHead>
+                <TableHead>Fecha</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredPayments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell>
+                    <div className="font-medium">
+                      ${payment.amount.toLocaleString()}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {payment.description || "Sin descripción"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      {payment.member ? (
+                        <>
+                          <User className="h-4 w-4" />
+                          <span>{payment.member.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Building className="h-4 w-4" />
+                          <span>{payment.sponsor?.name || "Sin nombre"}</span>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {payment.club?.name || "Sin club"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(payment.date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleView(payment)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Ver Detalles
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(payment)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Editar
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
                             <DropdownMenuItem
-                              onClick={() => handleView(payment)}
+                              onSelect={(e) => e.preventDefault()}
+                              className="text-red-600"
                             >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleEdit(payment)}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Payment
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  onSelect={(e) => e.preventDefault()}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Payment
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Are you sure?
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will
-                                    permanently delete the payment record.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(payment.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                ¿Estás seguro?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Esta acción no se puede deshacer. Esto eliminará
+                                permanentemente el pago.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDelete(payment.id)}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
+
+      {/* Add Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agregar Nuevo Pago</DialogTitle>
+            <DialogDescription>
+              Completa la información del nuevo pago.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="amount">Monto</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Descripción</Label>
+              <Input
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="date">Fecha</Label>
+              <Input
+                id="date"
+                type="date"
+                value={
+                  formData.date instanceof Date
+                    ? formData.date.toISOString().split("T")[0]
+                    : ""
+                }
+                onChange={(e) =>
+                  setFormData({ ...formData, date: new Date(e.target.value) })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="club">Club</Label>
+              <Select
+                value={formData.clubId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, clubId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar club" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
+                    </SelectItem>
                   ))}
-                </TableBody>
-              </Table>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="member">Miembro (opcional)</Label>
+              <Select
+                value={formData.memberId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, memberId: value, sponsorId: "" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar miembro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin miembro</SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="sponsor">Sponsor (opcional)</Label>
+              <Select
+                value={formData.sponsorId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, sponsorId: value, memberId: "" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar sponsor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin sponsor</SelectItem>
+                  {sponsors.map((sponsor) => (
+                    <SelectItem key={sponsor.id} value={sponsor.id}>
+                      {sponsor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit">Agregar Pago</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Pago</DialogTitle>
+            <DialogDescription>
+              Modifica la información del pago.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-amount">Monto</Label>
+              <Input
+                id="edit-amount"
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    amount: parseFloat(e.target.value) || 0,
+                  })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-description">Descripción</Label>
+              <Input
+                id="edit-description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-date">Fecha</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={
+                  formData.date instanceof Date
+                    ? formData.date.toISOString().split("T")[0]
+                    : ""
+                }
+                onChange={(e) =>
+                  setFormData({ ...formData, date: new Date(e.target.value) })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-club">Club</Label>
+              <Select
+                value={formData.clubId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, clubId: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar club" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-member">Miembro (opcional)</Label>
+              <Select
+                value={formData.memberId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, memberId: value, sponsorId: "" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar miembro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin miembro</SelectItem>
+                  {members.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-sponsor">Sponsor (opcional)</Label>
+              <Select
+                value={formData.sponsorId}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, sponsorId: value, memberId: "" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar sponsor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin sponsor</SelectItem>
+                  {sponsors.map((sponsor) => (
+                    <SelectItem key={sponsor.id} value={sponsor.id}>
+                      {sponsor.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit">Actualizar Pago</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* View Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Payment Details</DialogTitle>
-            <DialogDescription>
-              View detailed information about the payment transaction.
-            </DialogDescription>
+            <DialogTitle>Detalles del Pago</DialogTitle>
           </DialogHeader>
           {selectedPayment && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage
-                    src="/placeholder.svg?height=40&width=40"
-                    alt={selectedPayment.memberName}
-                  />
-                  <AvatarFallback className="text-lg">
-                    {selectedPayment.memberName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {selectedPayment.memberName}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {selectedPayment.transactionId}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="outline" className="gap-1">
-                      {getStatusIcon(selectedPayment.status)}
-                      {selectedPayment.status}
-                    </Badge>
-                    <Badge variant="secondary" className="gap-1">
-                      <CreditCard className="h-4 w-4" />
-                      {selectedPayment.paymentMethod.replace("_", " ")}
-                    </Badge>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <Label>Monto</Label>
+                <p className="text-sm font-medium">
+                  ${selectedPayment.amount.toLocaleString()}
+                </p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <h4 className="font-medium">Payment Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">
-                        {selectedPayment.currency}{" "}
-                        {selectedPayment.amount.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-muted-foreground" />
-                      <span>Category: {selectedPayment.category}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Due Date: {selectedPayment.dueDate}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Payment Date: {selectedPayment.date}</span>
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <Label>Descripción</Label>
+                <p className="text-sm text-muted-foreground">
+                  {selectedPayment.description || "Sin descripción"}
+                </p>
               </div>
-
-              <div className="space-y-3">
-                <h4 className="font-medium">Description</h4>
-                <p className="text-sm">{selectedPayment.description}</p>
+              <div>
+                <Label>Fecha</Label>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(selectedPayment.date).toLocaleDateString()}
+                </p>
               </div>
-
-              {selectedPayment.notes && (
-                <div className="space-y-3">
-                  <h4 className="font-medium">Notes</h4>
-                  <p className="text-sm">{selectedPayment.notes}</p>
-                </div>
-              )}
+              <div>
+                <Label>Club</Label>
+                <p className="text-sm text-muted-foreground">
+                  {selectedPayment.club?.name || "Sin club"}
+                </p>
+              </div>
+              <div>
+                <Label>Miembro/Sponsor</Label>
+                <p className="text-sm text-muted-foreground">
+                  {selectedPayment.member?.name ||
+                    selectedPayment.sponsor?.name ||
+                    "Sin asignar"}
+                </p>
+              </div>
             </div>
           )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsViewDialogOpen(false)}
-            >
-              Close
-            </Button>
-            {selectedPayment && (
-              <Button
-                onClick={() => {
-                  setIsViewDialogOpen(false);
-                  handleEdit(selectedPayment);
-                }}
-              >
-                Edit Payment
-              </Button>
-            )}
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -64,8 +64,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Role, CreateRoleData, UpdateRoleData, Permission } from "../types";
-import { roles, permissions } from "../data";
+import {
+  Role,
+  CreateRoleData,
+  UpdateRoleData,
+  Permission,
+  Club,
+} from "../types";
+import { roles, permissions, clubs } from "../data";
 
 export function RolesSection() {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
@@ -95,27 +101,26 @@ export function RolesSection() {
   });
 
   const handleCreate = () => {
+    const selectedClub = clubs.find((c) => c.id === createForm.clubId);
     const newRole: Role = {
       id: Date.now().toString(),
       name: createForm.name,
       clubId: createForm.clubId,
+      club: selectedClub,
       permissions:
         (createForm.permissionIds
-          ?.map((id) => {
-            const permission = permissions.find((p) => p.id === id);
+          ?.map((permissionId, index) => {
+            const permission = permissions.find((p) => p.id === permissionId);
             return permission
               ? {
-                  id: permission.id,
-                  name: permission.name,
-                  description: permission.description,
+                  id: `rp-${Date.now()}-${index}`,
+                  roleId: Date.now().toString(),
+                  permissionId: permission.id,
+                  permission: permission,
                 }
               : null;
           })
-          .filter(Boolean) as Array<{
-          id: string;
-          name: string;
-          description?: string;
-        }>) || [],
+          .filter(Boolean) as any[]) || [],
     };
     setRolesData([...rolesData, newRole]);
     setCreateForm({ name: "", clubId: "club-1", permissionIds: [] });
@@ -125,29 +130,30 @@ export function RolesSection() {
   const handleUpdate = () => {
     if (!selectedRole) return;
 
+    const selectedClub = clubs.find(
+      (c) => c.id === editingRole.clubId || selectedRole.clubId
+    );
     const updatedPermissions =
       (editingRole.permissionIds
-        ?.map((id) => {
-          const permission = permissions.find((p) => p.id === id);
+        ?.map((permissionId, index) => {
+          const permission = permissions.find((p) => p.id === permissionId);
           return permission
             ? {
-                id: permission.id,
-                name: permission.name,
-                description: permission.description,
+                id: `rp-${Date.now()}-${index}`,
+                roleId: selectedRole.id,
+                permissionId: permission.id,
+                permission: permission,
               }
             : null;
         })
-        .filter(Boolean) as Array<{
-        id: string;
-        name: string;
-        description?: string;
-      }>) || selectedRole.permissions;
+        .filter(Boolean) as any[]) || selectedRole.permissions;
 
     const updatedRoles = rolesData.map((role) =>
       role.id === selectedRole.id
         ? {
             ...role,
             ...editingRole,
+            club: selectedClub,
             permissions: updatedPermissions,
           }
         : role
@@ -167,7 +173,7 @@ export function RolesSection() {
     setEditingRole({
       name: role.name,
       clubId: role.clubId,
-      permissionIds: role.permissions?.map((p) => p.id) || [],
+      permissionIds: role.permissions?.map((p) => p.permissionId) || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -432,17 +438,20 @@ export function RolesSection() {
                       <Badge variant="outline">
                         {role.permissions?.length || 0} permisos
                       </Badge>
+                      <Badge variant="secondary">
+                        {role.club?.name || "Sin club"}
+                      </Badge>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Permisos:</p>
                       <div className="flex flex-wrap gap-1">
-                        {role.permissions?.slice(0, 3).map((permission) => (
+                        {role.permissions?.slice(0, 3).map((rolePermission) => (
                           <Badge
-                            key={permission.id}
+                            key={rolePermission.id}
                             variant="secondary"
                             className="text-xs"
                           >
-                            {permission.name}
+                            {rolePermission.permission?.name || "Sin nombre"}
                           </Badge>
                         ))}
                         {role.permissions && role.permissions.length > 3 && (
@@ -479,16 +488,16 @@ export function RolesSection() {
                       <span className="font-medium">{role.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>Club Deportivo Ejemplo</TableCell>
+                  <TableCell>{role.club?.name || "Sin club"}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1 max-w-xs">
-                      {role.permissions?.slice(0, 3).map((permission) => (
+                      {role.permissions?.slice(0, 3).map((rolePermission) => (
                         <Badge
-                          key={permission.id}
+                          key={rolePermission.id}
                           variant="secondary"
                           className="text-xs"
                         >
-                          {permission.name}
+                          {rolePermission.permission?.name || "Sin nombre"}
                         </Badge>
                       ))}
                       {role.permissions && role.permissions.length > 3 && (
@@ -587,8 +596,11 @@ export function RolesSection() {
                   <SelectValue placeholder="Seleccionar club" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="club-1">Club Deportivo Ejemplo</SelectItem>
-                  <SelectItem value="club-2">Club Deportivo 2</SelectItem>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -654,7 +666,7 @@ export function RolesSection() {
               <div>
                 <Label>Club</Label>
                 <p className="text-sm text-muted-foreground">
-                  Club Deportivo Ejemplo
+                  {selectedRole.club?.name || "Sin club"}
                 </p>
               </div>
               <div>
@@ -662,13 +674,13 @@ export function RolesSection() {
                   Permisos ({selectedRole.permissions?.length || 0})
                 </Label>
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {selectedRole.permissions?.map((permission) => (
+                  {selectedRole.permissions?.map((rolePermission) => (
                     <Badge
-                      key={permission.id}
+                      key={rolePermission.id}
                       variant="secondary"
                       className="text-xs"
                     >
-                      {permission.name}
+                      {rolePermission.permission?.name || "Sin nombre"}
                     </Badge>
                   ))}
                 </div>

@@ -65,144 +65,89 @@ export interface Member {
     id: string
     name: string
     email: string
-    role: string
-    status: "active" | "inactive" | "pending"
-    avatar: string
-    joinDate: string
-    lastActive: string
-    projects: number
-    skills: string[]
-    department: string
-    phone?: string
-    location?: string
+    clubId: string
+    club?: Club
+    payments?: Payment[]
+    createdAt?: Date
 }
 
 export interface CreateMemberData {
     name: string
     email: string
-    role: string
-    department: string
-    phone?: string
-    location?: string
-    skills: string[]
+    clubId: string
 }
 
-export interface UpdateMemberData extends Partial<CreateMemberData> {
-    status?: "active" | "inactive" | "pending"
-}
+export interface UpdateMemberData extends Partial<CreateMemberData> { }
 
 // Tipos para Users
 export interface User {
     id: string
-    username: string
     email: string
-    fullName: string
-    role: "admin" | "manager" | "user" | "guest"
-    status: "active" | "inactive" | "suspended"
-    avatar: string
-    joinDate: string
-    lastLogin: string
-    permissions: string[]
-    department?: string
-    phone?: string
-    location?: string
+    password: string
+    name: string
+    clubs?: UserClub[]
+    createdAt?: Date
+    updatedAt?: Date
 }
 
 export interface CreateUserData {
-    username: string
     email: string
-    fullName: string
-    role: "admin" | "manager" | "user" | "guest"
-    department?: string
-    phone?: string
-    location?: string
-    permissions: string[]
+    password: string
+    name: string
 }
 
-export interface UpdateUserData extends Partial<CreateUserData> {
-    status?: "active" | "inactive" | "suspended"
-}
+export interface UpdateUserData extends Partial<CreateUserData> { }
 
 // Tipos para Sponsors
 export interface Sponsor {
     id: string
     name: string
-    company: string
     email: string
-    phone: string
-    website: string
-    logo: string
-    status: "active" | "inactive" | "pending"
-    sponsorshipLevel: "platinum" | "gold" | "silver" | "bronze"
-    startDate: string
-    endDate: string
-    amount: number
-    currency: string
-    description: string
-    contactPerson: string
-    notes?: string
+    clubId: string
+    club?: Club
+    payments?: Payment[]
+    createdAt?: Date
 }
 
 export interface CreateSponsorData {
     name: string
-    company: string
     email: string
-    phone: string
-    website: string
-    sponsorshipLevel: "platinum" | "gold" | "silver" | "bronze"
-    startDate: string
-    endDate: string
-    amount: number
-    currency: string
-    description: string
-    contactPerson: string
-    notes?: string
+    clubId: string
 }
 
-export interface UpdateSponsorData extends Partial<CreateSponsorData> {
-    status?: "active" | "inactive" | "pending"
-}
+export interface UpdateSponsorData extends Partial<CreateSponsorData> { }
 
 // Tipos para Payments
 export interface Payment {
     id: string
-    memberId: string
-    memberName: string
     amount: number
-    currency: string
-    status: "pending" | "completed" | "failed" | "refunded"
-    paymentMethod: "credit_card" | "bank_transfer" | "paypal" | "cash"
-    transactionId: string
-    date: string
-    dueDate: string
-    description: string
-    category: "membership" | "event" | "donation" | "other"
-    receiptUrl?: string
-    notes?: string
+    description?: string
+    date: Date
+    memberId?: string
+    sponsorId?: string
+    clubId: string
+    club?: Club
+    member?: Member
+    sponsor?: Sponsor
 }
 
 export interface CreatePaymentData {
-    memberId: string
     amount: number
-    currency: string
-    paymentMethod: "credit_card" | "bank_transfer" | "paypal" | "cash"
-    dueDate: string
-    description: string
-    category: "membership" | "event" | "donation" | "other"
-    notes?: string
+    description?: string
+    date: Date
+    memberId?: string
+    sponsorId?: string
+    clubId: string
 }
 
-export interface UpdatePaymentData extends Partial<CreatePaymentData> {
-    status?: "pending" | "completed" | "failed" | "refunded"
-    transactionId?: string
-    receiptUrl?: string
-}
+export interface UpdatePaymentData extends Partial<CreatePaymentData> { }
 
 // Permission types
 export interface Permission {
     id: string
     name: string
     description?: string
+    roles?: RolePermission[]
 }
 
 export interface CreatePermissionData {
@@ -220,11 +165,9 @@ export interface Role {
     id: string
     name: string
     clubId: string
-    permissions?: Array<{
-        id: string
-        name: string
-        description?: string
-    }>
+    club?: Club
+    permissions?: RolePermission[]
+    userClubs?: UserClub[]
 }
 
 export interface CreateRoleData {
@@ -239,9 +182,42 @@ export interface UpdateRoleData {
     permissionIds?: string[]
 }
 
+// RolePermission types (junction table)
+export interface RolePermission {
+    id: string
+    roleId: string
+    permissionId: string
+    role?: Role
+    permission?: Permission
+}
+
+// UserClub types (junction table for user-role-club)
+export interface UserClub {
+    id: string
+    userId: string
+    clubId: string
+    roleId: string
+    user?: User
+    club?: Club
+    role?: Role
+}
+
 // User Role Assignment
 export interface AssignUserRoleData {
     userId: string
     clubId: string
     roleId: string
+}
+
+// Club types
+export interface Club {
+    id: string
+    name: string
+    users?: UserClub[]
+    roles?: Role[]
+    members?: Member[]
+    sponsors?: Sponsor[]
+    payments?: Payment[]
+    createdAt?: Date
+    updatedAt?: Date
 } 
