@@ -63,8 +63,11 @@ export class AuthController {
         status: 409,
         description: 'El usuario ya existe',
     })
-    async register(@Body() registerDto: RegisterDto) {
-        return await this.authService.register(registerDto);
+    async register(@Body() registerDto: RegisterDto, @Res() res: Response) {
+        const result = await this.authService.register(registerDto);
+        console.log('Register response:', result);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
     }
 
     @Public()
@@ -80,8 +83,10 @@ export class AuthController {
         status: 401,
         description: 'Refresh token inválido',
     })
-    async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-        return await this.authService.refreshToken(refreshTokenDto);
+    async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Res() res: Response) {
+        const result = await this.authService.refreshToken(refreshTokenDto);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
     }
 
     @Get('profile')

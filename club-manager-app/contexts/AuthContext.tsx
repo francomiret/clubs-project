@@ -50,7 +50,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         // Check for token in localStorage
         const token = localStorage.getItem("authToken");
-        console.log("AuthContext - Checking auth, token exists:", !!token);
 
         if (token) {
           // Validate token with backend
@@ -62,17 +61,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           if (response.ok) {
             const userData = await response.json();
-            console.log("AuthContext - Token valid, user data:", userData);
             setUser(userData);
           } else {
-            console.log("AuthContext - Token invalid, trying refresh");
             // Token is invalid, try to refresh
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
               try {
                 await refreshAuthToken();
               } catch (error) {
-                console.log("AuthContext - Refresh failed, clearing tokens");
                 // Refresh failed, remove tokens
                 localStorage.removeItem("authToken");
                 localStorage.removeItem("refreshToken");
@@ -82,7 +78,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
           }
         } else {
-          console.log("AuthContext - No token found");
         }
       } catch (error) {
         console.error("Auth check failed:", error);
@@ -107,8 +102,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error("No refresh token available");
     }
 
-    console.log("AuthContext - Refreshing token");
-
     const response = await fetch("/api/auth/refresh", {
       method: "POST",
       headers: {
@@ -122,7 +115,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     const data = await response.json();
-    console.log("AuthContext - Token refreshed successfully ");
 
     localStorage.setItem("authToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
@@ -136,7 +128,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (userResponse.ok) {
       const userData = await userResponse.json();
-      console.log("AuthContext - User data after refresh:", userData);
       setUser(userData);
     }
   };
@@ -167,8 +158,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(errorMsg);
       }
 
-      console.log("AuthContext - Login response data:", data);
-
       if (!data.token || !data.user) {
         console.error("Datos faltantes en la respuesta:", data);
         throw new Error(
@@ -193,7 +182,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(false);
     }
   };
-
   const register = async (
     name: string,
     email: string,
@@ -211,12 +199,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ name, email, password, clubName }),
       });
 
+      const responseText = await response.text();
+      const data = responseText ? JSON.parse(responseText) : {};
+
+      console.log("Register response:", data); // Para depuración
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Error al registrar usuario");
+        throw new Error(data.message || "Error al registrar usuario");
       }
 
-      const data = await response.json();
+      // Verificar que la respuesta tenga la estructura correcta
+      if (!data.token || !data.refreshToken || !data.user) {
+        console.error("Respuesta incompleta del servidor:", data);
+        throw new Error("Respuesta del servidor incompleta");
+      }
 
       // Store tokens
       localStorage.setItem("authToken", data.token);
@@ -229,6 +225,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       router.push("/home");
     } catch (error) {
       console.error("Registration failed:", error);
+      // Limpiar tokens en caso de error
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("refreshToken");
       throw error;
     } finally {
       setIsLoading(false);
@@ -260,13 +259,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAuthenticated: !!user,
     refreshToken,
   };
-
-  // Debug logging
-  console.log("AuthContext state:", {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-  });
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
