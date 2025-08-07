@@ -1,16 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto';
 import { PaymentEntity } from './entities/payment.entity';
 import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
+import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('payments')
+@UseGuards(AuthorizationGuard)
+@ApiBearerAuth()
 @Controller('payments')
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Post()
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Crear un nuevo pago' })
     @ApiResponse({
         status: 201,
@@ -18,11 +23,13 @@ export class PaymentsController {
         type: PaymentEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     create(@Body() createPaymentDto: CreatePaymentDto) {
         return this.paymentsService.create(createPaymentDto);
     }
 
     @Get()
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Obtener todos los pagos' })
     @ApiResponse({
         status: 200,
@@ -46,6 +53,7 @@ export class PaymentsController {
     }
 
     @Get('club/:clubId')
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Obtener pagos por club' })
     @ApiParam({ name: 'clubId', description: 'ID del club' })
     @ApiResponse({
@@ -71,6 +79,7 @@ export class PaymentsController {
     }
 
     @Get('member/:memberId')
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Obtener pagos por miembro' })
     @ApiParam({ name: 'memberId', description: 'ID del miembro' })
     @ApiResponse({
@@ -96,6 +105,7 @@ export class PaymentsController {
     }
 
     @Get('sponsor/:sponsorId')
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Obtener pagos por patrocinador' })
     @ApiParam({ name: 'sponsorId', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -121,6 +131,7 @@ export class PaymentsController {
     }
 
     @Get(':id')
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Obtener un pago por ID' })
     @ApiParam({ name: 'id', description: 'ID del pago' })
     @ApiResponse({
@@ -129,11 +140,13 @@ export class PaymentsController {
         type: PaymentEntity,
     })
     @ApiResponse({ status: 404, description: 'Pago no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findOne(@Param('id') id: string) {
         return this.paymentsService.findOne(id);
     }
 
     @Patch(':id')
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Actualizar un pago' })
     @ApiParam({ name: 'id', description: 'ID del pago' })
     @ApiResponse({
@@ -142,11 +155,13 @@ export class PaymentsController {
         type: PaymentEntity,
     })
     @ApiResponse({ status: 404, description: 'Pago no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
         return this.paymentsService.update(id, updatePaymentDto);
     }
 
     @Delete(':id')
+    @RequirePermission('payments', 'read')
     @ApiOperation({ summary: 'Eliminar un pago' })
     @ApiParam({ name: 'id', description: 'ID del pago' })
     @ApiResponse({
@@ -155,6 +170,7 @@ export class PaymentsController {
         type: PaymentEntity,
     })
     @ApiResponse({ status: 404, description: 'Pago no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     remove(@Param('id') id: string) {
         return this.paymentsService.remove(id);
     }

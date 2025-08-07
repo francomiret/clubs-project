@@ -4,9 +4,10 @@ import { RolesController } from './roles.controller';
 import { RolesRepository, ROLES_REPOSITORY } from './roles.repository';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CommonModule } from '../common/common.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, CommonModule],
+  imports: [AuthModule, PrismaModule, CommonModule],
   controllers: [RolesController],
   providers: [
     RolesService,

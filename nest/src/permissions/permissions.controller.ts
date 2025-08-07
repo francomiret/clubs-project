@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PermissionsService } from './permissions.service';
 import { CreatePermissionDto, UpdatePermissionDto } from './dto';
 import { PermissionEntity } from './entities/permission.entity';
@@ -7,8 +7,12 @@ import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('permissions')
+@UseGuards(AuthorizationGuard)
+@ApiBearerAuth()
 @Controller('permissions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class PermissionsController {
@@ -23,8 +27,11 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para crear permisos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 409, description: 'El permiso ya existe' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     create(@Body() createPermissionDto: CreatePermissionDto) {
         return this.permissionsService.create(createPermissionDto);
     }
@@ -38,6 +45,7 @@ export class PermissionsController {
         type: [PermissionEntity],
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer permisos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findAll() {
         return this.permissionsService.findAll();
     }
@@ -52,6 +60,7 @@ export class PermissionsController {
         type: PaginationResponseDto,
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer permisos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.permissionsService.findAllPaginated(query);
     }
@@ -66,7 +75,9 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 404, description: 'Permiso no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer permisos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findOne(@Param('id') id: string) {
         return this.permissionsService.findOne(id);
     }
@@ -81,8 +92,11 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 404, description: 'Permiso no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para actualizar permisos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 409, description: 'El nombre del permiso ya existe' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
         return this.permissionsService.update(id, updatePermissionDto);
     }
@@ -97,7 +111,9 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 404, description: 'Permiso no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para eliminar permisos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     remove(@Param('id') id: string) {
         return this.permissionsService.remove(id);
     }

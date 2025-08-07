@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { CreateRoleDto, UpdateRoleDto, AssignUserRoleDto } from './dto';
 import { RoleEntity } from './entities/role.entity';
@@ -7,8 +7,12 @@ import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('roles')
+@UseGuards(AuthorizationGuard)
+@ApiBearerAuth()
 @Controller('roles')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class RolesController {
@@ -23,8 +27,11 @@ export class RolesController {
         type: RoleEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para crear roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 409, description: 'El rol ya existe en este club' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     create(@Body() createRoleDto: CreateRoleDto) {
         return this.rolesService.create(createRoleDto);
     }
@@ -38,6 +45,7 @@ export class RolesController {
         type: [RoleEntity],
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findAll() {
         return this.rolesService.findAll();
     }
@@ -52,6 +60,7 @@ export class RolesController {
         type: PaginationResponseDto,
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.rolesService.findAllPaginated(query);
     }
@@ -66,6 +75,7 @@ export class RolesController {
         type: [RoleEntity],
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findByClubId(@Param('clubId') clubId: string) {
         return this.rolesService.findByClubId(clubId);
     }
@@ -81,6 +91,7 @@ export class RolesController {
         type: PaginationResponseDto,
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findByClubIdPaginated(@Param('clubId') clubId: string, @Query() query: PaginationQueryDto) {
         return this.rolesService.findByClubIdPaginated(clubId, query);
     }
@@ -95,7 +106,9 @@ export class RolesController {
         type: RoleEntity,
     })
     @ApiResponse({ status: 404, description: 'Rol no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findOne(@Param('id') id: string) {
         return this.rolesService.findOne(id);
     }
@@ -110,8 +123,11 @@ export class RolesController {
         type: RoleEntity,
     })
     @ApiResponse({ status: 404, description: 'Rol no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para actualizar roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 409, description: 'El rol ya existe en este club' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
         return this.rolesService.update(id, updateRoleDto);
     }
@@ -126,7 +142,9 @@ export class RolesController {
         type: RoleEntity,
     })
     @ApiResponse({ status: 404, description: 'Rol no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para eliminar roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     remove(@Param('id') id: string) {
         return this.rolesService.remove(id);
     }
@@ -139,9 +157,13 @@ export class RolesController {
         description: 'Usuario asignado al rol exitosamente',
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para actualizar roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 404, description: 'Rol no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 409, description: 'El rol no pertenece al club especificado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     assignUserToRole(@Body() assignUserRoleDto: AssignUserRoleDto) {
         return this.rolesService.assignUserToRole(assignUserRoleDto);
     }

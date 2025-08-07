@@ -1,16 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { SponsorsService } from './sponsors.service';
 import { CreateSponsorDto, UpdateSponsorDto } from './dto';
 import { SponsorEntity } from './entities/sponsor.entity';
 import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
+import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('sponsors')
+@UseGuards(AuthorizationGuard)
+@ApiBearerAuth()
 @Controller('sponsors')
 export class SponsorsController {
     constructor(private readonly sponsorsService: SponsorsService) { }
 
     @Post()
+    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Crear un nuevo patrocinador' })
     @ApiResponse({
         status: 201,
@@ -18,11 +23,13 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     create(@Body() createSponsorDto: CreateSponsorDto) {
         return this.sponsorsService.create(createSponsorDto);
     }
 
     @Get()
+    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Obtener todos los patrocinadores' })
     @ApiResponse({
         status: 200,
@@ -46,6 +53,7 @@ export class SponsorsController {
     }
 
     @Get('club/:clubId')
+    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Obtener patrocinadores por club' })
     @ApiParam({ name: 'clubId', description: 'ID del club' })
     @ApiResponse({
@@ -71,6 +79,7 @@ export class SponsorsController {
     }
 
     @Get(':id')
+    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Obtener un patrocinador por ID' })
     @ApiParam({ name: 'id', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -79,11 +88,13 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 404, description: 'Patrocinador no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findOne(@Param('id') id: string) {
         return this.sponsorsService.findOne(id);
     }
 
     @Patch(':id')
+    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Actualizar un patrocinador' })
     @ApiParam({ name: 'id', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -92,11 +103,13 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 404, description: 'Patrocinador no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     update(@Param('id') id: string, @Body() updateSponsorDto: UpdateSponsorDto) {
         return this.sponsorsService.update(id, updateSponsorDto);
     }
 
     @Delete(':id')
+    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Eliminar un patrocinador' })
     @ApiParam({ name: 'id', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -105,6 +118,7 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 404, description: 'Patrocinador no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     remove(@Param('id') id: string) {
         return this.sponsorsService.remove(id);
     }

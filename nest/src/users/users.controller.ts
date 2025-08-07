@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { UserEntity } from './entities/user.entity';
@@ -7,8 +7,12 @@ import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('users')
+@UseGuards(AuthorizationGuard)
+@ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 export class UsersController {
@@ -23,7 +27,9 @@ export class UsersController {
         type: UserEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para crear usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     create(@Body() createUserDto: CreateUserDto) {
         return this.usersService.create(createUserDto);
     }
@@ -37,6 +43,7 @@ export class UsersController {
         type: [UserEntity],
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findAll() {
         return this.usersService.findAll();
     }
@@ -51,6 +58,7 @@ export class UsersController {
         type: PaginationResponseDto,
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.usersService.findAllPaginated(query);
     }
@@ -65,6 +73,7 @@ export class UsersController {
         type: [UserEntity],
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findByClubId(@Param('clubId') clubId: string) {
         return this.usersService.findByClubId(clubId);
     }
@@ -80,6 +89,7 @@ export class UsersController {
         type: PaginationResponseDto,
     })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findByClubIdPaginated(@Param('clubId') clubId: string, @Query() query: PaginationQueryDto) {
         return this.usersService.findAllPaginated(query);
     }
@@ -94,7 +104,9 @@ export class UsersController {
         type: UserEntity,
     })
     @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para leer usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     findOne(@Param('id') id: string) {
         return this.usersService.findOne(id);
     }
@@ -109,7 +121,9 @@ export class UsersController {
         type: UserEntity,
     })
     @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para actualizar usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
         return this.usersService.update(id, updateUserDto);
     }
@@ -124,7 +138,9 @@ export class UsersController {
         type: UserEntity,
     })
     @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     @ApiResponse({ status: 403, description: 'Sin permisos para eliminar usuarios' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
     remove(@Param('id') id: string) {
         return this.usersService.remove(id);
     }
