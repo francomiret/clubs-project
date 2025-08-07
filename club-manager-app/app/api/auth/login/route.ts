@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { email, password } = body;
 
-        // Validar campos requeridos
         if (!email || !password) {
             return NextResponse.json(
                 { message: "Email y contraseña son requeridos" },
@@ -14,36 +13,54 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Llamar al backend NestJS
-        const response = await fetch(buildAuthUrl("LOGIN"), {
+        const backendUrl = buildAuthUrl("LOGIN");
+
+        const response = await fetch(backendUrl, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/json",
             },
             body: JSON.stringify({ email, password }),
         });
 
-        const data = await response.json();
+        // Verificar si la respuesta tiene contenido antes de parsear
+        const responseText = await response.text();
+        const data = responseText ? JSON.parse(responseText) : {};
 
         if (!response.ok) {
-            // Manejar errores del backend
             return NextResponse.json(
-                { message: data.message || "Error al iniciar sesión" },
+                {
+                    message: data.message ||
+                        (response.status === 401 ? "Credenciales inválidas" : "Error al autenticar")
+                },
                 { status: response.status }
             );
         }
 
-        // Retornar respuesta exitosa del backend
-        return NextResponse.json({
-            token: data.accessToken,
+        // Verificar estructura de la respuesta
+        if (!data.accessToken || !data.refreshToken || !data.user) {
+            console.error("Respuesta del backend incompleta:", data);
+            return NextResponse.json(
+                { message: "Respuesta del servidor incompleta" },
+                { status: 502 }
+            );
+        }
+
+        // Mapear nombres de campos para mantener consistencia con el frontend
+        const frontendResponse = {
+            token: data.accessToken,  // Asegurar compatibilidad con lo que espera el frontend
             refreshToken: data.refreshToken,
-            user: data.user,
-        });
+            user: data.user
+        };
+
+        return NextResponse.json(frontendResponse);
+
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("Error en login API route:", error);
         return NextResponse.json(
-            { message: "Error de conexión con el servidor" },
+            { message: "Error interno del servidor" },
             { status: 500 }
         );
     }
-} 
+}

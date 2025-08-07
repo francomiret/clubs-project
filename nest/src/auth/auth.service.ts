@@ -7,6 +7,20 @@ import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { JwtPayload, JwtRefreshPayload } from './interfaces/jwt-payload.interface';
 import { PrismaService } from '../prisma/prisma.service';
 
+export interface UserResponse {
+    user: {
+        id: string;
+        email: string;
+        name: string;
+        clubId?: string;
+        role?: string;
+        permissions: string[];
+    };
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+}
+
 @Injectable()
 export class AuthService {
     constructor(
@@ -59,23 +73,48 @@ export class AuthService {
         }
     }
 
-    async login(loginDto: LoginDto) {
+    async login(loginDto: LoginDto): Promise<UserResponse> {
         const user = await this.validateUser(loginDto.email, loginDto.password);
-
         if (!user) {
             throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        const tokens = await this.generateTokens(user);
+        // Obtener información del club y rol del usuario
+        const userClub = await this.prisma.userClub.findFirst({
+            where: { userId: user.id },
+            include: {
+                club: true,
+                role: {
+                    include: {
+                        permissions: {
+                            include: {
+                                permission: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const permissions = userClub?.role?.permissions?.map(rp => rp.permission.name) || [];
+
+        const tokens = await this.generateTokens({
+            ...user,
+            permissions,
+        });
+
+        const userData = {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            clubId: userClub?.clubId,
+            role: userClub?.role?.name,
+            permissions,
+        };
 
         return {
             ...tokens,
-            user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                permissions: user.permissions || [],
-            },
+            user: userData
         };
     }
 
@@ -256,6 +295,32 @@ export class AuthService {
             accessToken,
             refreshToken,
             expiresIn: this.getExpirationTime(this.configService.get<string>('JWT_EXPIRES_IN', '1h')),
+        };
+    }
+
+    async getProfile(userId: string) {
+        const userClub = await this.prisma.userClub.findFirst({
+            where: { userId },
+            include: {
+                club: true,
+                role: {
+                    include: {
+                        permissions: {
+                            include: {
+                                permission: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        const permissions = userClub?.role?.permissions?.map(rp => rp.permission.name) || [];
+
+        return {
+            clubId: userClub?.clubId,
+            role: userClub?.role?.name,
+            permissions,
         };
     }
 

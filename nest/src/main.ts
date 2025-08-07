@@ -41,6 +41,12 @@ async function bootstrap() {
     new TransformInterceptor(),
   );
 
+  // Configurar CORS
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    credentials: true,
+  });
+
   // Configurar Swagger
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, document, swaggerUiOptions);

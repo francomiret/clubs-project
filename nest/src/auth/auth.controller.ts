@@ -7,6 +7,7 @@ import {
     Request,
     HttpCode,
     HttpStatus,
+    Res,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -14,13 +15,15 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
+import { AuthService, UserResponse } from './auth.service';
 import { LoginDto, RegisterDto, RefreshTokenDto } from './dto';
 import { AuthResponseEntity, RefreshTokenResponseEntity } from './entities/auth.entity';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { Response } from 'express';
+
 
 @ApiTags('Autenticación')
 @Controller('auth')
@@ -41,8 +44,10 @@ export class AuthController {
         status: 401,
         description: 'Credenciales inválidas',
     })
-    async login(@Body() loginDto: LoginDto, @Request() req) {
-        return this.authService.login(loginDto);
+    async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+        const result = await this.authService.login(loginDto);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(result);
     }
 
     @Public()
@@ -59,7 +64,7 @@ export class AuthController {
         description: 'El usuario ya existe',
     })
     async register(@Body() registerDto: RegisterDto) {
-        return this.authService.register(registerDto);
+        return await this.authService.register(registerDto);
     }
 
     @Public()
@@ -76,7 +81,7 @@ export class AuthController {
         description: 'Refresh token inválido',
     })
     async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-        return this.authService.refreshToken(refreshTokenDto);
+        return await this.authService.refreshToken(refreshTokenDto);
     }
 
     @Get('profile')
@@ -92,12 +97,13 @@ export class AuthController {
         description: 'No autorizado',
     })
     async getProfile(@CurrentUser() user) {
+        const profileData = await this.authService.getProfile(user.id);
+
         return {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role,
-            clubId: user.clubId,
+            ...profileData,
         };
     }
 
