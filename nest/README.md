@@ -1,6 +1,8 @@
-# Clubs Project - NestJS con Prisma y PostgreSQL
+# 🏆 Clubs Project - Sistema de Gestión Deportiva
 
-Este proyecto está configurado con NestJS, Prisma ORM y PostgreSQL usando Docker, implementando el patrón Repository y documentación completa con Swagger.
+## 📋 Descripción General
+
+Sistema completo de gestión de clubs deportivos construido con **NestJS**, **Prisma ORM** y **PostgreSQL**, implementando autenticación JWT, sistema de roles y permisos granular, paginación, manejo de errores centralizado y documentación completa con Swagger.
 
 ## 🚀 Configuración Rápida
 
@@ -34,59 +36,328 @@ npm run db:seed
 npm run start:dev
 ```
 
-## 📊 Modelo de Datos
+## 🔐 Sistema de Autenticación y Autorización
 
-El proyecto incluye los siguientes modelos:
+### Características Principales
 
-### Club
+- **JWT (JSON Web Tokens)** para autenticación
+- **Refresh tokens** para renovación automática
+- **Sistema de roles** específicos por club
+- **Permisos granulares** para control de acceso
+- **Guards de protección** para rutas sensibles
 
-- `id`: Identificador único (UUID)
-- `name`: Nombre del club
-- `users`: Relación con usuarios del club
-- `members`: Relación con miembros del club
-- `sponsors`: Relación con patrocinadores
-- `payments`: Relación con pagos
-- `createdAt`: Fecha de creación
-- `updatedAt`: Fecha de actualización
+### Variables de Entorno
 
-### User
+Crear archivo `.env` en la raíz:
 
-- `id`: Identificador único (UUID)
-- `email`: Email único del usuario
-- `password`: Contraseña del usuario
-- `name`: Nombre del usuario
-- `role`: Rol del usuario (ADMIN, TREASURER, MEMBER, SPONSOR)
-- `clubId`: Referencia al club
-- `createdAt`: Fecha de creación
-- `updatedAt`: Fecha de actualización
+```env
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clubs_db?schema=public"
 
-### Member
+# JWT Configuration
+JWT_SECRET="your-super-secret-jwt-key-here"
+JWT_REFRESH_SECRET="your-super-secret-refresh-key-here"
+JWT_EXPIRES_IN="1h"
+JWT_REFRESH_EXPIRES_IN="7d"
 
-- `id`: Identificador único (UUID)
-- `name`: Nombre del miembro
-- `email`: Email único del miembro
-- `clubId`: Referencia al club
-- `payments`: Relación con pagos del miembro
-- `createdAt`: Fecha de creación
+# Application
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+```
 
-### Sponsor
+### Endpoints de Autenticación
 
-- `id`: Identificador único (UUID)
-- `name`: Nombre del patrocinador
-- `email`: Email único del patrocinador
-- `clubId`: Referencia al club
-- `payments`: Relación con pagos del patrocinador
-- `createdAt`: Fecha de creación
+#### 1. Registro de Usuario
 
-### Payment
+**POST** `/auth/register`
 
-- `id`: Identificador único (UUID)
-- `amount`: Monto del pago
-- `description`: Descripción opcional del pago
-- `date`: Fecha del pago
-- `memberId`: Referencia al miembro (opcional)
-- `sponsorId`: Referencia al patrocinador (opcional)
-- `clubId`: Referencia al club
+```json
+{
+  "email": "user@example.com",
+  "password": "password123",
+  "name": "Juan Pérez",
+  "clubName": "Club Deportivo"
+}
+```
+
+#### 2. Login
+
+**POST** `/auth/login`
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+#### 3. Refresh Token
+
+**POST** `/auth/refresh`
+
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### 4. Perfil de Usuario
+
+**GET** `/auth/profile`
+
+```
+Authorization: Bearer <token>
+```
+
+#### 5. Logout
+
+**POST** `/auth/logout`
+
+```
+Authorization: Bearer <token>
+```
+
+## 🛡️ Sistema de Roles y Permisos
+
+### Modelo de Datos
+
+- **Club**: Entidad principal que contiene la información del club
+- **User**: Usuarios del sistema
+- **UserClub**: Relación muchos a muchos entre usuarios y clubs con roles
+- **Role**: Roles específicos por club
+- **Permission**: Permisos del sistema
+- **RolePermission**: Relación entre roles y permisos
+- **Member**: Miembros del club
+- **Sponsor**: Patrocinadores del club
+- **Payment**: Pagos realizados
+
+### Permisos Disponibles (35 total)
+
+#### Usuarios
+
+- `users.read`, `users.create`, `users.update`, `users.delete`
+
+#### Miembros
+
+- `members.read`, `members.create`, `members.update`, `members.delete`
+
+#### Sponsors
+
+- `sponsors.read`, `sponsors.create`, `sponsors.update`, `sponsors.delete`
+
+#### Pagos
+
+- `payments.read`, `payments.create`, `payments.update`, `payments.delete`
+
+#### Roles
+
+- `roles.read`, `roles.create`, `roles.update`, `roles.delete`
+
+#### Permisos
+
+- `permissions.read`, `permissions.create`, `permissions.update`, `permissions.delete`
+
+#### Clubs
+
+- `club.read`, `club.update`, `clubs.read`
+
+#### Propiedades
+
+- `properties.read`, `properties.create`, `properties.update`, `properties.delete`
+
+#### Actividades
+
+- `activities.read`, `activities.create`, `activities.update`, `activities.delete`
+
+### Roles Predefinidos
+
+#### ADMIN
+
+- **Permisos**: Todos los permisos disponibles
+- **Acceso**: Gestión completa del sistema
+
+#### MANAGER
+
+- **Permisos**: Todos excepto eliminación y gestión de roles/permisos
+- **Acceso**: Gestión de datos sin eliminación
+
+#### MEMBER
+
+- **Permisos**: Solo permisos de lectura
+- **Acceso**: Visualización de información
+
+### Uso del Sistema
+
+#### Guard de Permisos
+
+```typescript
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Controller('users')
+export class UsersController {
+  @Get()
+  @RequirePermissions('users.read')
+  findAll() {
+    return this.usersService.findAll();
+  }
+}
+```
+
+#### Decorador de Permisos
+
+```typescript
+@RequirePermissions('users.create', 'users.update')
+create(@Body() createUserDto: CreateUserDto) {
+  return this.usersService.create(createUserDto);
+}
+```
+
+## 📊 Sistema de Paginación
+
+### Uso Rápido
+
+#### En el Controlador
+
+```typescript
+@Get('paginated')
+@Paginated()
+@ApiOperation({ summary: 'Obtener elementos con paginación' })
+findAllPaginated(@Query() query: PaginationQueryDto) {
+  return this.exampleService.findAllPaginated(query);
+}
+```
+
+#### Parámetros de Query
+
+- `page` (opcional): Número de página (default: 1)
+- `limit` (opcional): Elementos por página (default: 10, máximo: 100)
+
+#### Ejemplos de URLs
+
+```
+GET /clubs/paginated                    # Página 1, 10 elementos
+GET /clubs/paginated?page=2             # Página 2, 10 elementos
+GET /clubs/paginated?limit=5            # Página 1, 5 elementos
+GET /clubs/paginated?page=3&limit=20    # Página 3, 20 elementos
+```
+
+#### Respuesta de Paginación
+
+```json
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 25,
+    "totalPages": 3,
+    "hasNext": true,
+    "hasPrev": false
+  }
+}
+```
+
+## 🛡️ Sistema de Manejo de Errores
+
+### Componentes Principales
+
+1. **HttpExceptionFilter** - Filtro global de excepciones
+2. **LoggingInterceptor** - Interceptor para logging de requests/responses
+3. **TransformInterceptor** - Interceptor para transformar respuestas
+4. **RequestIdMiddleware** - Middleware para tracking de requests
+5. **Excepciones Personalizadas** - Clases de excepción específicas
+
+### Estructura de Respuestas
+
+#### Respuesta Exitosa
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "timestamp": "2025-08-01T10:30:00.000Z",
+  "path": "/api/clubs",
+  "requestId": "req_1733123400000_abc123def"
+}
+```
+
+#### Respuesta de Error
+
+```json
+{
+  "statusCode": 404,
+  "message": "Club con ID 123 no encontrado",
+  "error": "EntityNotFoundException",
+  "timestamp": "2025-08-01T10:30:00.000Z",
+  "path": "/api/clubs/123",
+  "requestId": "req_1733123400000_abc123def"
+}
+```
+
+### Tipos de Errores Manejados
+
+- **400**: Errores de validación
+- **401**: Token JWT inválido o expirado
+- **403**: Usuario no tiene permisos requeridos
+- **404**: Recurso no encontrado
+- **409**: Conflicto (recurso ya existe)
+- **500**: Error interno del servidor
+
+## 🌐 Endpoints Disponibles
+
+### Autenticación
+
+- `POST /auth/login` - Iniciar sesión
+- `POST /auth/register` - Registrarse
+- `POST /auth/refresh` - Renovar token
+- `GET /auth/profile` - Obtener perfil
+- `POST /auth/logout` - Cerrar sesión
+
+### Permisos
+
+- `GET /permissions` - Listar permisos
+- `GET /permissions/paginated` - Listar con paginación
+- `POST /permissions` - Crear permiso
+- `GET /permissions/:id` - Obtener permiso
+- `PATCH /permissions/:id` - Actualizar permiso
+- `DELETE /permissions/:id` - Eliminar permiso
+
+### Roles
+
+- `GET /roles` - Listar roles
+- `GET /roles/paginated` - Listar con paginación
+- `GET /roles/club/:clubId` - Roles por club
+- `POST /roles` - Crear rol
+- `GET /roles/:id` - Obtener rol
+- `PATCH /roles/:id` - Actualizar rol
+- `DELETE /roles/:id` - Eliminar rol
+- `POST /roles/assign-user` - Asignar usuario a rol
+
+### Otros Módulos
+
+- **Clubs**: `/clubs`
+- **Users**: `/users`
+- **Members**: `/members`
+- **Sponsors**: `/sponsors`
+- **Payments**: `/payments`
+
+## 📚 Documentación de la API (Swagger)
+
+### Acceso a la Documentación
+
+Una vez que la aplicación esté ejecutándose, accede a la documentación interactiva en:
+
+```
+http://localhost:3001/api
+```
+
+### Características
+
+- **Documentación Automática**: Todos los endpoints documentados automáticamente
+- **Validación de DTOs**: Los DTOs incluyen validaciones y ejemplos
+- **Respuestas Tipadas**: Todas las respuestas están tipadas con entidades
+- **Interfaz Interactiva**: Puedes probar los endpoints directamente desde Swagger UI
+- **Organización por Tags**: Los endpoints están organizados por categorías
 
 ## 🏗️ Arquitectura del Proyecto
 
@@ -114,13 +385,6 @@ Este proyecto implementa el patrón Repository para mejorar la separación de re
    - Separación clara de responsabilidades
    - Lógica de negocio independiente del acceso a datos
 
-#### Beneficios del Patrón Repository:
-
-- **Separación de responsabilidades**: Servicio, Repositorio y Controlador tienen roles claros
-- **Testabilidad mejorada**: Fácil mock del repositorio para tests unitarios
-- **Flexibilidad**: Cambio de ORM sin afectar el servicio
-- **Mantenibilidad**: Código más limpio y organizado
-
 ### Flujo de Datos
 
 ```
@@ -128,102 +392,6 @@ HTTP Request → Controller → Service → Repository → Database
                 ↓           ↓         ↓
               DTOs      Business    Data Access
                         Logic       Layer
-```
-
-## 🛠️ Comandos Útiles
-
-```bash
-# Base de datos
-npm run db:studio      # Abrir Prisma Studio
-npm run db:migrate     # Aplicar migraciones
-npm run db:generate    # Generar cliente Prisma
-npm run db:reset       # Resetear base de datos
-npm run db:seed        # Poblar con datos de ejemplo
-
-# Desarrollo
-npm run start:dev      # Iniciar en modo desarrollo
-npm run build          # Compilar el proyecto
-npm run test           # Ejecutar tests
-```
-
-## 🌐 Endpoints Disponibles
-
-- `POST /clubs` - Crear un nuevo club
-- `GET /clubs` - Obtener todos los clubs
-- `GET /clubs/:id` - Obtener un club específico
-- `PATCH /clubs/:id` - Actualizar un club
-- `DELETE /clubs/:id` - Eliminar un club
-
-## 📚 Documentación de la API (Swagger)
-
-La API está completamente documentada con Swagger. Una vez que la aplicación esté ejecutándose, puedes acceder a la documentación interactiva en:
-
-```
-http://localhost:3000/api
-```
-
-### Características de la Documentación:
-
-- **Documentación Automática**: Todos los endpoints están documentados automáticamente
-- **Validación de DTOs**: Los DTOs incluyen validaciones y ejemplos
-- **Respuestas Tipadas**: Todas las respuestas están tipadas con entidades
-- **Interfaz Interactiva**: Puedes probar los endpoints directamente desde Swagger UI
-- **Organización por Tags**: Los endpoints están organizados por categorías
-
-### DTOs Configurados:
-
-- **CreateClubDto**: Para crear nuevos clubs
-- **UpdateClubDto**: Para actualizar clubs existentes
-- **ClubEntity**: Entidad para documentar las respuestas
-
-### Decoradores Utilizados:
-
-- `@ApiTags()`: Organizar endpoints por categorías
-- `@ApiOperation()`: Describir operaciones
-- `@ApiResponse()`: Documentar respuestas
-- `@ApiParam()`: Documentar parámetros de ruta
-- `@ApiProperty()`: Documentar propiedades de DTOs
-
-### Ejemplo de Uso:
-
-#### Crear un Club
-
-```bash
-POST /clubs
-Content-Type: application/json
-
-{
-  "name": "Club Deportivo Nuevo"
-}
-```
-
-#### Obtener Todos los Clubs
-
-```bash
-GET /clubs
-```
-
-#### Obtener un Club por ID
-
-```bash
-GET /clubs/{id}
-```
-
-#### Actualizar un Club
-
-```bash
-PATCH /clubs/{id}
-Content-Type: application/json
-
-{
-  "name": "Club Deportivo Actualizado"
-}
-```
-
-#### Eliminar un Club
-
-```bash
-DELETE /clubs/{id}
 ```
 
 ## 📁 Estructura del Proyecto
@@ -286,96 +454,179 @@ src/
 │   ├── payments.service.ts
 │   ├── payments.controller.ts
 │   └── payments.module.ts
+├── roles/
+│   ├── dto/
+│   ├── entities/
+│   ├── roles.repository.ts
+│   ├── roles.service.ts
+│   ├── roles.controller.ts
+│   └── roles.module.ts
+├── permissions/
+│   ├── dto/
+│   ├── entities/
+│   ├── permissions.repository.ts
+│   ├── permissions.service.ts
+│   ├── permissions.controller.ts
+│   └── permissions.module.ts
 ├── swagger.config.ts        # Configuración de Swagger
 ├── swagger-ui.config.ts     # Configuración de UI de Swagger
 └── app.module.ts            # Módulo principal
 ```
 
-## 🔧 Configuración
+## 🛠️ Comandos Útiles
 
-### Variables de Entorno
+```bash
+# Base de datos
+npm run db:studio      # Abrir Prisma Studio
+npm run db:migrate     # Aplicar migraciones
+npm run db:generate    # Generar cliente Prisma
+npm run db:reset       # Resetear base de datos
+npm run db:seed        # Poblar con datos de ejemplo
 
-El archivo `.env` contiene la configuración necesaria:
-
-```
-# Database
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/clubs_db?schema=public"
-
-# JWT Configuration
-JWT_SECRET="your-super-secret-jwt-key-here"
-JWT_REFRESH_SECRET="your-super-secret-refresh-key-here"
-JWT_EXPIRES_IN="1h"
-JWT_REFRESH_EXPIRES_IN="7d"
-
-# Application
-PORT=3000
-NODE_ENV=development
+# Desarrollo
+npm run start:dev      # Iniciar en modo desarrollo
+npm run build          # Compilar el proyecto
+npm run test           # Ejecutar tests
 ```
 
-### Docker
+## 🧪 Datos de Prueba
 
-El archivo `docker-compose.yml` configura PostgreSQL:
+### Usuario Administrador por Defecto
 
-- Puerto: 5432
-- Usuario: postgres
-- Contraseña: postgres
-- Base de datos: clubs_db
+- **Email**: `admin@club.com`
+- **Password**: `admin123`
+- **Rol**: ADMIN
+- **Permisos**: Todos los permisos del sistema (35)
 
-### Validación Global
+### Datos Creados por el Seed
 
-La aplicación incluye validación global con `class-validator`:
+- **35 permisos** del sistema
+- **1 club** por defecto
+- **1 rol ADMIN** con todos los permisos
+- **1 usuario admin** con acceso completo
 
-```typescript
-app.useGlobalPipes(
-  new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }),
-);
+## 🔒 Seguridad
+
+### Autenticación
+
+- **JWT tokens** con expiración configurable
+- **Refresh tokens** para renovación automática
+- **Encriptación de contraseñas** con bcrypt
+
+### Autorización
+
+- **Sistema de permisos granular** por recurso y acción
+- **Roles específicos por club** para multi-tenancy
+- **Validación de permisos** en cada endpoint
+
+### Validación
+
+- **Validación global** con class-validator
+- **Sanitización de datos** en logs
+- **Manejo seguro de errores** sin exposición de información interna
+
+## 🚀 Próximos Pasos
+
+### Funcionalidades Planificadas
+
+1. **Cache de permisos** para mejorar rendimiento
+2. **Logs de auditoría** para cambios en roles y permisos
+3. **Permisos condicionales** basados en datos
+4. **Roles temporales** con fechas de expiración
+5. **Interfaz de administración web** para gestión de roles
+
+### Mejoras de Seguridad
+
+1. **Blacklist de tokens** para logout seguro
+2. **Rate limiting** para prevenir ataques de fuerza bruta
+3. **Two-factor authentication** (2FA)
+4. **OAuth integration** con Google, Facebook, etc.
+
+### Mejoras de Performance
+
+1. **Cache Redis** para datos frecuentemente accedidos
+2. **Compresión de respuestas** para reducir ancho de banda
+3. **Lazy loading** de relaciones en Prisma
+4. **Connection pooling** optimizado para PostgreSQL
+
+## 🔍 Verificación del Sistema
+
+### 1. Verificar Base de Datos
+
+```bash
+npm run db:seed
 ```
 
-### Opciones de Swagger UI
+### 2. Iniciar Aplicación
 
-- **Ordenamiento alfabético** de tags y operaciones
-- **Expansión automática** de la documentación
-- **Filtros** para buscar endpoints
-- **Duración de requests** visible
-- **Modo "Try it out"** habilitado
+```bash
+npm run start:dev
+```
 
-## 🧪 Pruebas
+### 3. Verificar Documentación
 
-El script `scripts/seed.ts` crea datos de ejemplo que incluyen:
+- Abrir navegador en: `http://localhost:3001/api`
+- Deberías ver la interfaz de Swagger con todos los endpoints
 
-- Un club de ejemplo
-- Un usuario administrador
-- Un miembro
-- Un patrocinador
-- Pagos de ejemplo
+### 4. Probar Autenticación
 
-Ejecuta `npm run db:seed` para poblar la base de datos con estos datos de prueba.
+- Usar credenciales: `admin@club.com` / `admin123`
+- Verificar que puedes acceder a `/permissions`, `/roles`, `/users`
 
-## 🎯 Próximos Pasos
+## 📞 Soporte y Contacto
 
-Para expandir el proyecto, puedes:
+### Documentación Adicional
 
-1. **Agregar más DTOs** para otros modelos (User, Member, Sponsor, Payment)
-2. **Crear entidades** para todos los modelos
-3. **Documentar códigos de error** específicos
-4. **Agregar ejemplos** más detallados
-5. **Crear repositorios** para otros modelos
-6. **Implementar cache** en el repositorio
-7. **Agregar transacciones** para operaciones complejas
-8. **Implementar blacklist de tokens** para logout
-9. **Agregar rate limiting** para endpoints sensibles
-10. **Implementar autenticación de dos factores**
+- **Swagger UI**: `http://localhost:3001/api`
+- **Prisma Studio**: `npm run db:studio`
 
-## 🔍 Verificación
+### Solución de Problemas Comunes
 
-Para verificar que todo funciona correctamente:
+#### Error de Conexión a Base de Datos
 
-1. Inicia la aplicación: `npm run start:dev`
-2. Abre tu navegador en: `http://localhost:3000/api`
-3. Deberías ver la interfaz de Swagger con todos los endpoints documentados
-4. Prueba los endpoints usando la interfaz interactiva
-5. Verifica que la base de datos esté poblada con datos de ejemplo
+```bash
+# Verificar que PostgreSQL esté corriendo
+docker ps
+# Verificar DATABASE_URL en .env
+```
+
+#### Error de Compilación
+
+```bash
+# Limpiar cache
+rm -rf node_modules
+npm install
+npm run build
+```
+
+#### Error de Seed
+
+```bash
+# Verificar esquema de base de datos
+npx prisma db push
+npm run db:seed
+```
+
+---
+
+## 🎉 ¡El sistema está completamente implementado y listo para usar!
+
+**Características implementadas:**
+
+- ✅ Autenticación JWT completa
+- ✅ Sistema de roles y permisos granular
+- ✅ Paginación automática
+- ✅ Manejo de errores centralizado
+- ✅ Documentación Swagger completa
+- ✅ Patrón Repository implementado
+- ✅ Validación global de datos
+- ✅ Logging detallado
+- ✅ Base de datos configurada y poblada
+- ✅ Endpoints protegidos y funcionales
+
+**Para comenzar:**
+
+1. Ejecuta `npm run db:seed` para configurar la base de datos
+2. Inicia la aplicación con `npm run start:dev`
+3. Accede a la documentación en `http://localhost:3001/api`
+4. Usa las credenciales admin: `admin@club.com` / `admin123`
