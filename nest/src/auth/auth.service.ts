@@ -177,9 +177,12 @@ export class AuthService {
             }
         });
 
+        // Obtener TODOS los permisos del sistema para el rol ADMIN
+        const allPermissions = await this.prisma.permission.findMany();
+
         // Asignar todos los permisos al rol ADMIN
         await Promise.all(
-            basicPermissions.map(permission =>
+            allPermissions.map(permission =>
                 this.prisma.rolePermission.create({
                     data: {
                         roleId: adminRole.id,
@@ -228,8 +231,19 @@ export class AuthService {
             },
         });
 
+        // Obtener todos los permisos del rol ADMIN para incluirlos en el token
+        const adminPermissions = await this.prisma.rolePermission.findMany({
+            where: { roleId: adminRole.id },
+            include: { permission: true }
+        });
+
+        const userPermissions = adminPermissions.map(rp => rp.permission.name);
+
         const { password, ...userWithoutPassword } = user;
-        const tokens = await this.generateTokens(userWithoutPassword);
+        const tokens = await this.generateTokens({
+            ...userWithoutPassword,
+            permissions: userPermissions,
+        });
 
         return {
             ...tokens,
@@ -239,7 +253,7 @@ export class AuthService {
                 name: user.name,
                 clubId: club.id,
                 role: 'ADMIN',
-                permissions: basicPermissions.map(p => p.name),
+                permissions: userPermissions,
             },
         };
     }

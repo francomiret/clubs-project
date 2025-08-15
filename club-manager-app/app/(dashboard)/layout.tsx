@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/creative/Sidebar";
 import { Header } from "@/components/creative/Header";
 import { sidebarItems } from "@/components/creative/data";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AuthErrorDisplay } from "@/components/auth/AuthErrorDisplay";
 
 export default function DashboardLayout({
   children,
@@ -46,6 +47,11 @@ export default function DashboardLayout({
             onToggleMobileMenu={toggleMobileMenu}
             notifications={notifications}
           />
+
+          {/* Error Display */}
+          <div className="px-4 md:px-6 pt-4">
+            <AuthErrorDisplay />
+          </div>
 
           {/* Page Content */}
           <main className="flex-1 p-4 md:p-6">{children}</main>

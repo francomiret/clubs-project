@@ -8,6 +8,8 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthError } from "@/hooks/useAuthError";
+import { checkBackendHealth, logHealthStatus } from "@/lib/health-check";
 
 interface User {
   id: string;
@@ -31,6 +33,8 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   refreshToken: () => Promise<void>;
+  error: any;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,11 +47,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { setAuthError, clearError } = useAuthError();
 
   // Check if user is logged in on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
+        clearError(); // Limpiar errores previos
+
+        // Verificar salud del backend primero
+        console.log("🔍 Verificando salud del backend...");
+        const healthResult = await checkBackendHealth();
+        logHealthStatus(healthResult);
+
+        if (!healthResult.isHealthy) {
+          setAuthError(
+            `Backend no disponible: ${
+              healthResult.error || "Error de conexión"
+            }`,
+            "BACKEND_UNREACHABLE"
+          );
+          setUser(null);
+          return;
+        }
+
         // Check for token in localStorage
         const token = localStorage.getItem("authToken");
 
@@ -61,7 +85,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           if (response.ok) {
             const userData = await response.json();
-            setUser(userData);
+            // Validar que userData tenga la estructura correcta
+            if (userData && userData.id && userData.email) {
+              setUser(userData);
+            } else {
+              console.error("Respuesta del servidor inválida:", userData);
+              setAuthError("Datos de usuario inválidos", "INVALID_USER_DATA");
+              throw new Error("Datos de usuario inválidos");
+            }
           } else {
             // Token is invalid, try to refresh
             const refreshToken = localStorage.getItem("refreshToken");
@@ -69,32 +100,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
               try {
                 await refreshAuthToken();
               } catch (error) {
+                console.error("Error al refrescar token:", error);
+                setAuthError("Error al renovar la sesión", "REFRESH_FAILED");
                 // Refresh failed, remove tokens
                 localStorage.removeItem("authToken");
                 localStorage.removeItem("refreshToken");
+                setUser(null);
               }
             } else {
+              setAuthError("Sesión expirada", "TOKEN_EXPIRED");
               localStorage.removeItem("authToken");
+              setUser(null);
             }
           }
         } else {
+          setUser(null);
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        console.error("Error en verificación de autenticación:", error);
+        setAuthError(
+          "Error de verificación de autenticación",
+          "AUTH_CHECK_FAILED"
+        );
         localStorage.removeItem("authToken");
         localStorage.removeItem("refreshToken");
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Only check auth if no user is already set
-    if (!user) {
-      checkAuth();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user]);
+    // Always check authentication on mount
+    checkAuth();
+  }, [clearError, setAuthError]); // Only runs on mount
 
   const refreshAuthToken = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
@@ -102,33 +140,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
       throw new Error("No refresh token available");
     }
 
-    const response = await fetch("/api/auth/refresh", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to refresh token");
-    }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to refresh token");
+      }
 
-    const data = await response.json();
+      const data = await response.json();
 
-    localStorage.setItem("authToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
+      if (!data.accessToken || !data.refreshToken) {
+        throw new Error("Invalid refresh response");
+      }
 
-    // After successful refresh, get user data
-    const userResponse = await fetch("/api/auth/me", {
-      headers: {
-        Authorization: `Bearer ${data.accessToken}`,
-      },
-    });
+      localStorage.setItem("authToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
 
-    if (userResponse.ok) {
-      const userData = await userResponse.json();
-      setUser(userData);
+      // After successful refresh, get user data
+      const userResponse = await fetch("/api/auth/me", {
+        headers: {
+          Authorization: `Bearer ${data.accessToken}`,
+        },
+      });
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        if (userData && userData.id && userData.email) {
+          setUser(userData);
+        } else {
+          throw new Error("Invalid user data after refresh");
+        }
+      } else {
+        throw new Error("Failed to get user data after refresh");
+      }
+    } catch (error) {
+      console.error("Token refresh failed:", error);
+      throw error;
     }
   };
 
@@ -258,6 +312,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     isAuthenticated: !!user,
     refreshToken,
+    error: null, // Assuming error state is managed by useAuthError
+    clearError,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

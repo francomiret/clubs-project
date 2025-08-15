@@ -7,11 +7,9 @@ import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
-import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
 import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('users')
-@UseGuards(AuthorizationGuard)
 @ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard, PermissionsGuard)

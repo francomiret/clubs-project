@@ -24,22 +24,35 @@ export async function GET(request: NextRequest) {
             },
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Error del backend:", response.status, errorData);
+            return NextResponse.json(
+                {
+                    message: errorData.message || "Error de autenticación",
+                    status: response.status
+                },
+                { status: response.status }
+            );
+        }
+
         const data = await response.json();
 
-        if (!response.ok) {
-            // Manejar errores del backend
+        // Validar estructura de datos
+        if (!data || !data.id || !data.email) {
+            console.error("Datos de usuario inválidos del backend:", data);
             return NextResponse.json(
-                { message: data.message || "Token inválido" },
-                { status: response.status }
+                { message: "Datos de usuario inválidos" },
+                { status: 500 }
             );
         }
 
         // Retornar datos del usuario del backend
         return NextResponse.json(data);
     } catch (error) {
-        console.error("Auth check error:", error);
+        console.error("Error en verificación de autenticación:", error);
         return NextResponse.json(
-            { message: "Error de conexión con el servidor" },
+            { message: "Error interno del servidor" },
             { status: 500 }
         );
     }

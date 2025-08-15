@@ -11,7 +11,6 @@ import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorizat
 import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('permissions')
-@UseGuards(AuthorizationGuard)
 @ApiBearerAuth()
 @Controller('permissions')
 @UseGuards(JwtAuthGuard, PermissionsGuard)
