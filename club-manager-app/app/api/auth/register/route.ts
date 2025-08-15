@@ -17,7 +17,19 @@ export async function POST(request: NextRequest) {
         });
 
         const responseText = await response.text();
-        const data = responseText ? JSON.parse(responseText) : {};
+        console.log("Respuesta del backend:", responseText.substring(0, 200) + "...");
+        console.log("Status del backend:", response.status);
+
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+            console.error("Error al parsear JSON del backend:", parseError);
+            return NextResponse.json(
+                { message: "Error al procesar la respuesta del servidor" },
+                { status: 502 }
+            );
+        }
 
         if (!response.ok) {
             return NextResponse.json(
@@ -26,22 +38,27 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // El backend devuelve { success: true, data: { accessToken, refreshToken, user } }
+        const authData = data.data || data;
+
         // Verificar estructura de la respuesta del backend
-        if (!data.accessToken || !data.refreshToken || !data.user) {
+        if (!authData.accessToken || !authData.refreshToken || !authData.user) {
+            console.error("Respuesta del backend incompleta:", authData);
             return NextResponse.json(
                 { message: "Respuesta incompleta del servidor backend" },
                 { status: 502 }
             );
         }
 
-        // Mapear los nombres de campos para el frontend
+        // Devolver la respuesta del backend directamente
         return NextResponse.json({
-            token: data.accessToken,
-            refreshToken: data.refreshToken,
-            user: data.user,
+            accessToken: authData.accessToken,
+            refreshToken: authData.refreshToken,
+            user: authData.user,
         });
 
     } catch (error) {
+        console.error("Error en register API route:", error);
         return NextResponse.json(
             { message: "Error de conexión con el servidor" },
             { status: 500 }

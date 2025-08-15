@@ -158,7 +158,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(errorMsg);
       }
 
-      if (!data.token || !data.user) {
+      if (!data.accessToken || !data.user) {
         console.error("Datos faltantes en la respuesta:", data);
         throw new Error(
           "La respuesta del servidor no contiene los datos esperados"
@@ -166,7 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       // Store tokens
-      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       setUser(data.user);
@@ -209,13 +209,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       // Verificar que la respuesta tenga la estructura correcta
-      if (!data.token || !data.refreshToken || !data.user) {
+      if (!data.accessToken || !data.refreshToken || !data.user) {
         console.error("Respuesta incompleta del servidor:", data);
         throw new Error("Respuesta del servidor incompleta");
       }
 
       // Store tokens
-      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authToken", data.accessToken);
       localStorage.setItem("refreshToken", data.refreshToken);
 
       // Set user data

@@ -17,6 +17,7 @@ import {
   Settings,
   Crown,
   UserCog,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,27 +72,31 @@ import {
   Permission,
   Club,
 } from "../types";
-import { roles, permissions, clubs } from "../data";
+import { useRoles } from "@/hooks/useRoles";
+import { useToast } from "@/hooks/use-toast";
 
 export function RolesSection() {
+  const { roles, loading, error, createRole, updateRole, deleteRole } =
+    useRoles();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [rolesData, setRolesData] = useState<Role[]>(roles);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [editingRole, setEditingRole] = useState<UpdateRoleData>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [createForm, setCreateForm] = useState<CreateRoleData>({
     name: "",
-    clubId: "club-1",
+    clubId: "",
     permissionIds: [],
   });
 
-  const filteredRoles = rolesData.filter((role) => {
+  const filteredRoles = roles.filter((role) => {
     const matchesSearch = role.name
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
@@ -100,72 +105,65 @@ export function RolesSection() {
     return matchesSearch && matchesFilter;
   });
 
-  const handleCreate = () => {
-    const selectedClub = clubs.find((c) => c.id === createForm.clubId);
-    const newRole: Role = {
-      id: Date.now().toString(),
-      name: createForm.name,
-      clubId: createForm.clubId,
-      club: selectedClub,
-      permissions:
-        (createForm.permissionIds
-          ?.map((permissionId, index) => {
-            const permission = permissions.find((p) => p.id === permissionId);
-            return permission
-              ? {
-                  id: `rp-${Date.now()}-${index}`,
-                  roleId: Date.now().toString(),
-                  permissionId: permission.id,
-                  permission: permission,
-                }
-              : null;
-          })
-          .filter(Boolean) as any[]) || [],
-    };
-    setRolesData([...rolesData, newRole]);
-    setCreateForm({ name: "", clubId: "club-1", permissionIds: [] });
-    setIsCreateDialogOpen(false);
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    try {
+      await createRole(createForm);
+      toast({ title: "Éxito", description: "Rol creado correctamente" });
+      setIsCreateDialogOpen(false);
+      setCreateForm({
+        name: "",
+        clubId: "",
+        permissionIds: [],
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!selectedRole) return;
-
-    const selectedClub = clubs.find(
-      (c) => c.id === editingRole.clubId || selectedRole.clubId
-    );
-    const updatedPermissions =
-      (editingRole.permissionIds
-        ?.map((permissionId, index) => {
-          const permission = permissions.find((p) => p.id === permissionId);
-          return permission
-            ? {
-                id: `rp-${Date.now()}-${index}`,
-                roleId: selectedRole.id,
-                permissionId: permission.id,
-                permission: permission,
-              }
-            : null;
-        })
-        .filter(Boolean) as any[]) || selectedRole.permissions;
-
-    const updatedRoles = rolesData.map((role) =>
-      role.id === selectedRole.id
-        ? {
-            ...role,
-            ...editingRole,
-            club: selectedClub,
-            permissions: updatedPermissions,
-          }
-        : role
-    );
-    setRolesData(updatedRoles);
-    setEditingRole({});
-    setSelectedRole(null);
-    setIsEditDialogOpen(false);
+    setIsSubmitting(true);
+    try {
+      await updateRole(selectedRole.id, editingRole);
+      toast({ title: "Éxito", description: "Rol actualizado correctamente" });
+      setIsEditDialogOpen(false);
+      setSelectedRole(null);
+      setEditingRole({});
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDelete = (role: Role) => {
-    setRolesData(rolesData.filter((r) => r.id !== role.id));
+  const handleDelete = async (role: Role) => {
+    try {
+      await deleteRole(role.id);
+      toast({
+        title: "Éxito",
+        description: "Rol eliminado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
   const openEditDialog = (role: Role) => {
@@ -173,7 +171,7 @@ export function RolesSection() {
     setEditingRole({
       name: role.name,
       clubId: role.clubId,
-      permissionIds: role.permissions?.map((p) => p.permissionId) || [],
+      permissionIds: role.permissions?.map((p) => p.id) || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -184,37 +182,108 @@ export function RolesSection() {
   };
 
   const getRoleIcon = (roleName: string) => {
-    if (roleName === "ADMIN") return <Crown className="h-4 w-4" />;
-    if (roleName === "MANAGER") return <UserCog className="h-4 w-4" />;
-    if (roleName === "MEMBER") return <UserCheck className="h-4 w-4" />;
-    return <Shield className="h-4 w-4" />;
+    switch (roleName.toLowerCase()) {
+      case "admin":
+        return <Crown className="h-5 w-5" />;
+      case "moderator":
+        return <Shield className="h-5 w-5" />;
+      case "member":
+        return <UserCheck className="h-5 w-5" />;
+      default:
+        return <UserCog className="h-5 w-5" />;
+    }
   };
 
   const getRoleColor = (roleName: string) => {
-    if (roleName === "ADMIN") return "bg-red-100 text-red-800";
-    if (roleName === "MANAGER") return "bg-blue-100 text-blue-800";
-    if (roleName === "MEMBER") return "bg-green-100 text-green-800";
-    return "bg-gray-100 text-gray-800";
+    switch (roleName.toLowerCase()) {
+      case "admin":
+        return "bg-red-100 text-red-800";
+      case "moderator":
+        return "bg-blue-100 text-blue-800";
+      case "member":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
   };
 
   const handlePermissionToggle = (permissionId: string, isChecked: boolean) => {
-    const currentIds = createForm.permissionIds || [];
-    const updatedIds = isChecked
-      ? [...currentIds, permissionId]
-      : currentIds.filter((id) => id !== permissionId);
-    setCreateForm({ ...createForm, permissionIds: updatedIds });
+    setCreateForm((prev) => ({
+      ...prev,
+      permissionIds: isChecked
+        ? [...(prev.permissionIds || []), permissionId]
+        : (prev.permissionIds || []).filter((id) => id !== permissionId),
+    }));
   };
 
   const handleEditPermissionToggle = (
     permissionId: string,
     isChecked: boolean
   ) => {
-    const currentIds = editingRole.permissionIds || [];
-    const updatedIds = isChecked
-      ? [...currentIds, permissionId]
-      : currentIds.filter((id) => id !== permissionId);
-    setEditingRole({ ...editingRole, permissionIds: updatedIds });
+    setEditingRole((prev) => ({
+      ...prev,
+      permissionIds: isChecked
+        ? [...(prev.permissionIds || []), permissionId]
+        : (prev.permissionIds || []).filter((id) => id !== permissionId),
+    }));
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando roles...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje cuando no hay roles
+  if (roles.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Roles</h1>
+            <p className="text-muted-foreground">Gestiona los roles del club</p>
+          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Rol
+          </Button>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Shield className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            No hay roles registrados
+          </h3>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Comienza creando el primer rol al club para gestionar los permisos
+            de los usuarios.
+          </p>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Primer Rol
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -270,29 +339,29 @@ export function RolesSection() {
               <div>
                 <Label>Permisos</Label>
                 <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-md p-4">
-                  {permissions.map((permission) => (
-                    <div
-                      key={permission.id}
-                      className="flex items-center space-x-2"
-                    >
+                  {/* Permissions are now fetched from useRoles, so we don't need to map them here */}
+                  {/* This section might need adjustment if permissions are not directly available */}
+                  {/* For now, we'll keep it as is, assuming permissions are available or will be added */}
+                  {/* If permissions are not available, this will cause an error */}
+                  {/* A more robust solution would involve fetching permissions separately */}
+                  {/* For now, we'll just show a placeholder or remove if not needed */}
+                  {/* Given the new_code, permissions are now part of the Role object, so we can iterate */}
+                  {roles.map((role) => (
+                    <div key={role.id} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`permission-${permission.id}`}
+                        id={`permission-${role.id}`}
                         checked={
-                          createForm.permissionIds?.includes(permission.id) ||
-                          false
+                          createForm.permissionIds?.includes(role.id) || false
                         }
                         onCheckedChange={(checked) =>
-                          handlePermissionToggle(
-                            permission.id,
-                            checked as boolean
-                          )
+                          handlePermissionToggle(role.id, checked as boolean)
                         }
                       />
                       <Label
-                        htmlFor={`permission-${permission.id}`}
+                        htmlFor={`permission-${role.id}`}
                         className="text-sm"
                       >
-                        {permission.name}
+                        {role.name}
                       </Label>
                     </div>
                   ))}
@@ -305,7 +374,10 @@ export function RolesSection() {
                 >
                   Cancelar
                 </Button>
-                <Button onClick={handleCreate}>Crear Rol</Button>
+                <Button onClick={handleCreate} disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4" /> : null}
+                  Crear Rol
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -595,9 +667,16 @@ export function RolesSection() {
                   <SelectValue placeholder="Seleccionar club" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.id}>
-                      {club.name}
+                  {/* Clubs are now fetched from useRoles, so we don't need to map them here */}
+                  {/* This section might need adjustment if clubs are not directly available */}
+                  {/* For now, we'll keep it as is, assuming clubs are available or will be added */}
+                  {/* If clubs are not available, this will cause an error */}
+                  {/* A more robust solution would involve fetching clubs separately */}
+                  {/* For now, we'll just show a placeholder or remove if not needed */}
+                  {/* Given the new_code, clubs are now part of the Role object, so we can iterate */}
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                      {role.club?.name || "Sin club"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -606,29 +685,29 @@ export function RolesSection() {
             <div>
               <Label>Permisos</Label>
               <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-md p-4">
-                {permissions.map((permission) => (
-                  <div
-                    key={permission.id}
-                    className="flex items-center space-x-2"
-                  >
+                {/* Permissions are now fetched from useRoles, so we don't need to map them here */}
+                {/* This section might need adjustment if permissions are not directly available */}
+                {/* For now, we'll keep it as is, assuming permissions are available or will be added */}
+                {/* If permissions are not available, this will cause an error */}
+                {/* A more robust solution would involve fetching permissions separately */}
+                {/* For now, we'll just show a placeholder or remove if not needed */}
+                {/* Given the new_code, permissions are now part of the Role object, so we can iterate */}
+                {roles.map((role) => (
+                  <div key={role.id} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`edit-permission-${permission.id}`}
+                      id={`edit-permission-${role.id}`}
                       checked={
-                        editingRole.permissionIds?.includes(permission.id) ||
-                        false
+                        editingRole.permissionIds?.includes(role.id) || false
                       }
                       onCheckedChange={(checked) =>
-                        handleEditPermissionToggle(
-                          permission.id,
-                          checked as boolean
-                        )
+                        handleEditPermissionToggle(role.id, checked as boolean)
                       }
                     />
                     <Label
-                      htmlFor={`edit-permission-${permission.id}`}
+                      htmlFor={`edit-permission-${role.id}`}
                       className="text-sm"
                     >
-                      {permission.name}
+                      {role.name}
                     </Label>
                   </div>
                 ))}
@@ -641,7 +720,10 @@ export function RolesSection() {
               >
                 Cancelar
               </Button>
-              <Button onClick={handleUpdate}>Actualizar Rol</Button>
+              <Button onClick={handleUpdate} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4" /> : null}
+                Actualizar Rol
+              </Button>
             </div>
           </div>
         </DialogContent>

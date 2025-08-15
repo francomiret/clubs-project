@@ -7,7 +7,6 @@ import {
     Request,
     HttpCode,
     HttpStatus,
-    Res,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -22,7 +21,6 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { Response } from 'express';
 
 
 @ApiTags('Autenticación')
@@ -44,10 +42,8 @@ export class AuthController {
         status: 401,
         description: 'Credenciales inválidas',
     })
-    async login(@Body() loginDto: LoginDto, @Res() res: Response) {
-        const result = await this.authService.login(loginDto);
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
+    async login(@Body() loginDto: LoginDto) {
+        return await this.authService.login(loginDto);
     }
 
     @Public()
@@ -63,11 +59,10 @@ export class AuthController {
         status: 409,
         description: 'El usuario ya existe',
     })
-    async register(@Body() registerDto: RegisterDto, @Res() res: Response) {
+    async register(@Body() registerDto: RegisterDto) {
         const result = await this.authService.register(registerDto);
         console.log('Register response:', result);
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
+        return result;
     }
 
     @Public()
@@ -83,10 +78,8 @@ export class AuthController {
         status: 401,
         description: 'Refresh token inválido',
     })
-    async refreshToken(@Body() refreshTokenDto: RefreshTokenDto, @Res() res: Response) {
-        const result = await this.authService.refreshToken(refreshTokenDto);
-        res.setHeader('Content-Type', 'application/json');
-        res.send(result);
+    async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+        return await this.authService.refreshToken(refreshTokenDto);
     }
 
     @Get('profile')
@@ -105,9 +98,6 @@ export class AuthController {
         const profileData = await this.authService.getProfile(user.id);
 
         return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
             ...profileData,
         };
     }

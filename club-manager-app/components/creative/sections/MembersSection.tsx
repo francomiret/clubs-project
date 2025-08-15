@@ -15,6 +15,7 @@ import {
   Users,
   Grid3X3,
   List,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -69,39 +70,44 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Member, CreateMemberData, UpdateMemberData, Club } from "../types";
+import { Member, CreateMemberData, UpdateMemberData } from "../types";
 import { IconRenderer } from "../IconRenderer";
-import { clubs } from "../data";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useMembers } from "@/hooks/useMembers";
+import { useToast } from "@/hooks/use-toast";
 
 interface MembersSectionProps {
-  members: Member[];
+  // Props opcionales para compatibilidad con el componente existente
+  members?: Member[];
   onAddMember?: (member: CreateMemberData) => void;
   onUpdateMember?: (id: string, member: UpdateMemberData) => void;
   onDeleteMember?: (id: string) => void;
 }
 
 export function MembersSection({
-  members: initialMembers,
+  members: initialMembers = [],
   onAddMember,
   onUpdateMember,
   onDeleteMember,
 }: MembersSectionProps) {
   const { t } = useLanguage();
-  const [members, setMembers] = useState<Member[]>(initialMembers);
+  const { toast } = useToast();
+  const { members, loading, error, createMember, updateMember, deleteMember } =
+    useMembers();
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [clubFilter, setClubFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "grid">("grid");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState<CreateMemberData>({
     name: "",
     email: "",
-    clubId: "club-1",
+    clubId: "",
   });
 
   // Filter members
@@ -109,55 +115,72 @@ export function MembersSection({
     const matchesSearch =
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClub = clubFilter === "all" || member.clubId === clubFilter;
 
-    return matchesSearch && matchesClub;
+    return matchesSearch;
   });
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    if (selectedMember) {
-      // Update existing member
-      const selectedClub = clubs.find((c) => c.id === formData.clubId);
-      const updatedMember: Member = {
-        ...selectedMember,
-        ...formData,
-        club: selectedClub,
-      };
-      setMembers(
-        members.map((m) => (m.id === selectedMember.id ? updatedMember : m))
-      );
-      onUpdateMember?.(selectedMember.id, formData);
-      setIsEditDialogOpen(false);
-    } else {
-      // Add new member
-      const selectedClub = clubs.find((c) => c.id === formData.clubId);
-      const newMember: Member = {
-        id: Date.now().toString(),
-        ...formData,
-        club: selectedClub,
-        createdAt: new Date(),
-      };
-      setMembers([...members, newMember]);
-      onAddMember?.(formData);
-      setIsAddDialogOpen(false);
+    try {
+      if (selectedMember) {
+        // Update existing member
+        await updateMember(selectedMember.id, formData);
+        onUpdateMember?.(selectedMember.id, formData);
+        setIsEditDialogOpen(false);
+        toast({
+          title: "Miembro actualizado",
+          description: "El miembro se ha actualizado correctamente.",
+        });
+      } else {
+        // Add new member
+        await createMember(formData);
+        onAddMember?.(formData);
+        setIsAddDialogOpen(false);
+        toast({
+          title: "Miembro creado",
+          description: "El miembro se ha creado correctamente.",
+        });
+      }
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        clubId: "",
+      });
+      setSelectedMember(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      clubId: "club-1",
-    });
-    setSelectedMember(null);
   };
 
   // Handle delete
-  const handleDelete = (id: string) => {
-    setMembers(members.filter((m) => m.id !== id));
-    onDeleteMember?.(id);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMember(id);
+      onDeleteMember?.(id);
+      toast({
+        title: "Miembro eliminado",
+        description: "El miembro se ha eliminado correctamente.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle edit
@@ -176,6 +199,118 @@ export function MembersSection({
     setSelectedMember(member);
     setIsViewDialogOpen(true);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando miembros...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje cuando no hay miembros
+  if (members.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Miembros</h1>
+            <p className="text-muted-foreground">
+              Gestiona los miembros del club
+            </p>
+          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Miembro
+          </Button>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Users className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            No hay miembros registrados
+          </h3>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Comienza agregando el primer miembro al club para gestionar la
+            información de los participantes.
+          </p>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Primer Miembro
+          </Button>
+        </div>
+
+        {/* Add Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Miembro</DialogTitle>
+              <DialogDescription>
+                Agrega un nuevo miembro al club.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Agregar Miembro
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -205,21 +340,6 @@ export function MembersSection({
               className="pl-8"
             />
           </div>
-          <Select value={clubFilter} onValueChange={setClubFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder={t("members.filters.filterByClub")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {t("members.filters.allClubs")}
-              </SelectItem>
-              {clubs.map((club) => (
-                <SelectItem key={club.id} value={club.id}>
-                  {club.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -481,26 +601,7 @@ export function MembersSection({
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="club">Club</Label>
-              <Select
-                value={formData.clubId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, clubId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar club" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.id}>
-                      {club.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
             <DialogFooter>
               <Button
                 type="button"
@@ -509,7 +610,16 @@ export function MembersSection({
               >
                 Cancelar
               </Button>
-              <Button type="submit">Agregar Miembro</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Agregando...
+                  </>
+                ) : (
+                  "Agregar Miembro"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -548,26 +658,7 @@ export function MembersSection({
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="edit-club">Club</Label>
-              <Select
-                value={formData.clubId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, clubId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar club" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.id}>
-                      {club.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+
             <DialogFooter>
               <Button
                 type="button"
@@ -576,7 +667,16 @@ export function MembersSection({
               >
                 Cancelar
               </Button>
-              <Button type="submit">Actualizar Miembro</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Actualizando...
+                  </>
+                ) : (
+                  "Actualizar Miembro"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -15,17 +15,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
-import {
-  members,
-  users,
-  sponsors,
-  payments,
-  roles,
-  permissions,
-  clubs,
-  properties,
-  activities,
-} from "@/components/creative/data";
+import { useClub } from "@/hooks/useClub";
+import { useMembers } from "@/hooks/useMembers";
+import { useUsers } from "@/hooks/useUsers";
+import { useSponsors } from "@/hooks/useSponsors";
+import { usePayments } from "@/hooks/usePayments";
+import { useRoles } from "@/hooks/useRoles";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useProperties } from "@/hooks/useProperties";
+import { useActivities } from "@/hooks/useActivities";
+import { useToast } from "@/hooks/use-toast";
 import {
   Users,
   User,
@@ -41,52 +40,115 @@ import {
   Edit,
   Save,
   X,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { Club, UpdateClubData } from "@/components/creative/types";
 import { formatDate } from "@/lib/utils";
+import React from "react";
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const [club, setClub] = useState<Club>(clubs[0]);
+  const {
+    club,
+    loading: clubLoading,
+    error: clubError,
+    updateClub,
+  } = useClub();
+  const { members } = useMembers();
+  const { users } = useUsers();
+  const { sponsors } = useSponsors();
+  const { payments } = usePayments();
+  const { roles } = useRoles();
+  const { permissions } = usePermissions();
+  const { properties } = useProperties();
+  const { activities } = useActivities();
+  const { toast } = useToast();
+
   const [isEditing, setIsEditing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<UpdateClubData>({
-    name: clubs[0].name,
-    alias: clubs[0].alias || "",
-    logo: clubs[0].logo || "",
-    location: clubs[0].location || "",
-    foundationDate: clubs[0].foundationDate
-      ? clubs[0].foundationDate.toISOString().split("T")[0]
-      : undefined,
-    description: clubs[0].description || "",
+    name: "",
+    alias: "",
+    logo: "",
+    location: "",
+    foundationDate: undefined,
+    description: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Update form data when club data is loaded
+  React.useEffect(() => {
+    if (club) {
+      setFormData({
+        name: club.name,
+        alias: club.alias || "",
+        logo: club.logo || "",
+        location: club.location || "",
+        foundationDate: club.foundationDate
+          ? new Date(club.foundationDate).toISOString().split("T")[0]
+          : undefined,
+        description: club.description || "",
+      });
+    }
+  }, [club]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const updatedClub: Club = {
-      ...club,
-      ...formData,
-      foundationDate: formData.foundationDate
-        ? new Date(formData.foundationDate)
-        : undefined,
-    };
-    setClub(updatedClub);
-    setIsEditing(false);
+    setIsSubmitting(true);
+
+    try {
+      await updateClub(formData);
+      toast({ title: "Éxito", description: "Club actualizado correctamente" });
+      setIsEditing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
-    setFormData({
-      name: club.name,
-      alias: club.alias || "",
-      logo: club.logo || "",
-      location: club.location || "",
-      foundationDate: club.foundationDate
-        ? club.foundationDate.toISOString().split("T")[0]
-        : undefined,
-      description: club.description || "",
-    });
+    if (club) {
+      setFormData({
+        name: club.name,
+        alias: club.alias || "",
+        logo: club.logo || "",
+        location: club.location || "",
+        foundationDate: club.foundationDate
+          ? new Date(club.foundationDate).toISOString().split("T")[0]
+          : undefined,
+        description: club.description || "",
+      });
+    }
     setIsEditing(false);
   };
+
+  if (clubLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando información del club...</span>
+      </div>
+    );
+  }
+
+  if (clubError || !club) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">
+            {clubError || "No se pudo cargar la información del club"}
+          </p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
 
   const stats = [
     {
@@ -309,11 +371,11 @@ export default function HomePage() {
                         <Input
                           id="foundationDate"
                           type="date"
-                          value={formData.foundationDate}
+                          value={formData.foundationDate || ""}
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              foundationDate: e.target.value,
+                              foundationDate: e.target.value || undefined,
                             })
                           }
                         />
@@ -343,9 +405,13 @@ export default function HomePage() {
                       >
                         Cancelar
                       </Button>
-                      <Button type="submit">
-                        <Save className="mr-2 h-4 w-4" />
-                        Guardar Cambios
+                      <Button type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="mr-2 h-4 w-4" />
+                        )}
+                        {isSubmitting ? "Guardando..." : "Guardar Cambios"}
                       </Button>
                     </div>
                   </form>

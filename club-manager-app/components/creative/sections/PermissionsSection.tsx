@@ -15,6 +15,8 @@ import {
   Users,
   FileText,
   Settings,
+  Loader2,
+  Key,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,14 +61,22 @@ import {
   CreatePermissionData,
   UpdatePermissionData,
 } from "../types";
-import { permissions } from "../data";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useToast } from "@/hooks/use-toast";
 
 export function PermissionsSection() {
+  const {
+    permissions,
+    loading,
+    error,
+    createPermission,
+    updatePermission,
+    deletePermission,
+  } = usePermissions();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [permissionsData, setPermissionsData] =
-    useState<Permission[]>(permissions);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -74,6 +84,7 @@ export function PermissionsSection() {
     useState<Permission | null>(null);
   const [editingPermission, setEditingPermission] =
     useState<UpdatePermissionData>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [createForm, setCreateForm] = useState<CreatePermissionData>({
@@ -81,7 +92,7 @@ export function PermissionsSection() {
     description: "",
   });
 
-  const filteredPermissions = permissionsData.filter((permission) => {
+  const filteredPermissions = permissions.filter((permission) => {
     const matchesSearch =
       permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       permission.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -90,33 +101,64 @@ export function PermissionsSection() {
     return matchesSearch && matchesFilter;
   });
 
-  const handleCreate = () => {
-    const newPermission: Permission = {
-      id: Date.now().toString(),
-      name: createForm.name,
-      description: createForm.description,
-    };
-    setPermissionsData([...permissionsData, newPermission]);
-    setCreateForm({ name: "", description: "" });
-    setIsCreateDialogOpen(false);
+  const handleCreate = async () => {
+    setIsSubmitting(true);
+    try {
+      await createPermission(createForm);
+      toast({ title: "Éxito", description: "Permiso creado correctamente" });
+      setIsCreateDialogOpen(false);
+      setCreateForm({ name: "", description: "" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!selectedPermission) return;
-
-    const updatedPermissions = permissionsData.map((permission) =>
-      permission.id === selectedPermission.id
-        ? { ...permission, ...editingPermission }
-        : permission
-    );
-    setPermissionsData(updatedPermissions);
-    setEditingPermission({});
-    setSelectedPermission(null);
-    setIsEditDialogOpen(false);
+    setIsSubmitting(true);
+    try {
+      await updatePermission(selectedPermission.id, editingPermission);
+      toast({
+        title: "Éxito",
+        description: "Permiso actualizado correctamente",
+      });
+      setIsEditDialogOpen(false);
+      setSelectedPermission(null);
+      setEditingPermission({});
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleDelete = (permission: Permission) => {
-    setPermissionsData(permissionsData.filter((p) => p.id !== permission.id));
+  const handleDelete = async (permission: Permission) => {
+    try {
+      await deletePermission(permission.id);
+      toast({
+        title: "Éxito",
+        description: "Permiso eliminado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
   const openEditDialog = (permission: Permission) => {
@@ -134,33 +176,93 @@ export function PermissionsSection() {
   };
 
   const getPermissionIcon = (permissionName: string) => {
-    if (permissionName.includes("users")) return <Users className="h-4 w-4" />;
-    if (permissionName.includes("members"))
-      return <UserCheck className="h-4 w-4" />;
-    if (permissionName.includes("roles")) return <Shield className="h-4 w-4" />;
-    if (permissionName.includes("permissions"))
-      return <Settings className="h-4 w-4" />;
-    return <FileText className="h-4 w-4" />;
+    if (permissionName.includes("read")) return <Eye className="h-4 w-4" />;
+    if (permissionName.includes("write"))
+      return <FileText className="h-4 w-4" />;
+    if (permissionName.includes("delete"))
+      return <Trash2 className="h-4 w-4" />;
+    if (permissionName.includes("admin")) return <Shield className="h-4 w-4" />;
+    return <Settings className="h-4 w-4" />;
   };
 
   const getPermissionCategory = (permissionName: string) => {
-    if (permissionName.includes("users")) return "Usuarios";
-    if (permissionName.includes("members")) return "Miembros";
-    if (permissionName.includes("roles")) return "Roles";
-    if (permissionName.includes("permissions")) return "Permisos";
-    if (permissionName.includes("clubs")) return "Clubs";
-    if (permissionName.includes("sponsors")) return "Sponsors";
-    if (permissionName.includes("payments")) return "Pagos";
+    if (permissionName.includes("user")) return "Usuarios";
+    if (permissionName.includes("role")) return "Roles";
+    if (permissionName.includes("permission")) return "Permisos";
+    if (permissionName.includes("club")) return "Clubes";
+    if (permissionName.includes("member")) return "Miembros";
+    if (permissionName.includes("sponsor")) return "Sponsors";
+    if (permissionName.includes("payment")) return "Pagos";
     return "General";
   };
 
   const getPermissionAction = (permissionName: string) => {
-    if (permissionName.includes(".read")) return "Leer";
-    if (permissionName.includes(".create")) return "Crear";
-    if (permissionName.includes(".update")) return "Actualizar";
-    if (permissionName.includes(".delete")) return "Eliminar";
-    return "Acceso";
+    if (permissionName.includes("read")) return "Lectura";
+    if (permissionName.includes("write")) return "Escritura";
+    if (permissionName.includes("delete")) return "Eliminación";
+    if (permissionName.includes("create")) return "Creación";
+    if (permissionName.includes("update")) return "Actualización";
+    return "Acción";
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando permisos...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje cuando no hay permisos
+  if (permissions.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Permisos</h1>
+            <p className="text-muted-foreground">
+              Gestiona los permisos del sistema
+            </p>
+          </div>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Permiso
+          </Button>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Key className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            No hay permisos registrados
+          </h3>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Comienza creando el primer permiso del sistema para gestionar el
+            acceso a las funcionalidades.
+          </p>
+          <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Crear Primer Permiso
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -217,7 +319,12 @@ export function PermissionsSection() {
                 >
                   Cancelar
                 </Button>
-                <Button onClick={handleCreate}>Crear Permiso</Button>
+                <Button onClick={handleCreate} disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Crear Permiso
+                </Button>
               </div>
             </div>
           </DialogContent>
@@ -501,7 +608,12 @@ export function PermissionsSection() {
               >
                 Cancelar
               </Button>
-              <Button onClick={handleUpdate}>Actualizar Permiso</Button>
+              <Button onClick={handleUpdate} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Actualizar Permiso
+              </Button>
             </div>
           </div>
         </DialogContent>

@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
         }
 
         const backendUrl = buildAuthUrl("LOGIN");
+        console.log("Intentando conectar a:", backendUrl);
 
         const response = await fetch(backendUrl, {
             method: "POST",
@@ -26,7 +27,36 @@ export async function POST(request: NextRequest) {
 
         // Verificar si la respuesta tiene contenido antes de parsear
         const responseText = await response.text();
-        const data = responseText ? JSON.parse(responseText) : {};
+        console.log("Respuesta del backend:", responseText.substring(0, 200) + "...");
+        console.log("Status del backend:", response.status);
+        console.log("Headers del backend:", Object.fromEntries(response.headers.entries()));
+
+        // Verificar si la respuesta es HTML en lugar de JSON
+        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
+            console.error("El backend está devolviendo HTML en lugar de JSON. URL:", backendUrl);
+            return NextResponse.json(
+                {
+                    message: "Error de configuración del servidor. El backend no está respondiendo correctamente.",
+                    details: "Se recibió HTML en lugar de JSON"
+                },
+                { status: 502 }
+            );
+        }
+
+        let data;
+        try {
+            data = responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+            console.error("Error al parsear JSON del backend:", parseError);
+            console.error("Respuesta recibida:", responseText);
+            return NextResponse.json(
+                {
+                    message: "Error al procesar la respuesta del servidor",
+                    details: "La respuesta no es un JSON válido"
+                },
+                { status: 502 }
+            );
+        }
 
         if (!response.ok) {
             return NextResponse.json(
@@ -38,20 +68,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // El backend devuelve { success: true, data: { accessToken, refreshToken, user } }
+        const authData = data.data || data;
+
         // Verificar estructura de la respuesta
-        if (!data.accessToken || !data.refreshToken || !data.user) {
-            console.error("Respuesta del backend incompleta:", data);
+        if (!authData.accessToken || !authData.refreshToken || !authData.user) {
+            console.error("Respuesta del backend incompleta:", authData);
             return NextResponse.json(
                 { message: "Respuesta del servidor incompleta" },
                 { status: 502 }
             );
         }
 
-        // Mapear nombres de campos para mantener consistencia con el frontend
+        // Devolver la respuesta del backend directamente
         const frontendResponse = {
-            token: data.accessToken,  // Asegurar compatibilidad con lo que espera el frontend
-            refreshToken: data.refreshToken,
-            user: data.user
+            accessToken: authData.accessToken,
+            refreshToken: authData.refreshToken,
+            user: authData.user
         };
 
         return NextResponse.json(frontendResponse);

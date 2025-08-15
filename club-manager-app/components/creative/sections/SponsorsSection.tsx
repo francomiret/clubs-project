@@ -14,6 +14,7 @@ import {
   Building,
   Grid3X3,
   List,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -68,92 +69,96 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Sponsor, CreateSponsorData, UpdateSponsorData, Club } from "../types";
-import { clubs } from "../data";
+import { Sponsor, CreateSponsorData, UpdateSponsorData } from "../types";
+import { useSponsors } from "@/hooks/useSponsors";
+import { useToast } from "@/hooks/use-toast";
 
-interface SponsorsSectionProps {
-  sponsors: Sponsor[];
-  onAddSponsor?: (sponsor: CreateSponsorData) => void;
-  onUpdateSponsor?: (id: string, sponsor: UpdateSponsorData) => void;
-  onDeleteSponsor?: (id: string) => void;
-}
-
-export function SponsorsSection({
-  sponsors: initialSponsors,
-  onAddSponsor,
-  onUpdateSponsor,
-  onDeleteSponsor,
-}: SponsorsSectionProps) {
-  const [sponsors, setSponsors] = useState<Sponsor[]>(initialSponsors);
+export function SponsorsSection() {
+  const {
+    sponsors,
+    loading,
+    error,
+    createSponsor,
+    updateSponsor,
+    deleteSponsor,
+  } = useSponsors();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
-  const [clubFilter, setClubFilter] = useState<string>("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedSponsor, setSelectedSponsor] = useState<Sponsor | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "grid">("grid");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState<CreateSponsorData>({
     name: "",
     email: "",
-    clubId: "club-1",
+    clubId: "",
   });
 
-  // Filter sponsors
+  // Filter sponsors based on search term
   const filteredSponsors = sponsors.filter((sponsor) => {
     const matchesSearch =
       sponsor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       sponsor.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClub = clubFilter === "all" || sponsor.clubId === clubFilter;
-
-    return matchesSearch && matchesClub;
+    return matchesSearch;
   });
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    if (selectedSponsor) {
-      // Update existing sponsor
-      const selectedClub = clubs.find((c) => c.id === formData.clubId);
-      const updatedSponsor: Sponsor = {
-        ...selectedSponsor,
-        ...formData,
-        club: selectedClub,
-      };
-      setSponsors(
-        sponsors.map((s) => (s.id === selectedSponsor.id ? updatedSponsor : s))
-      );
-      onUpdateSponsor?.(selectedSponsor.id, formData);
-      setIsEditDialogOpen(false);
-    } else {
-      // Add new sponsor
-      const selectedClub = clubs.find((c) => c.id === formData.clubId);
-      const newSponsor: Sponsor = {
-        id: Date.now().toString(),
-        ...formData,
-        club: selectedClub,
-        createdAt: new Date(),
-      };
-      setSponsors([...sponsors, newSponsor]);
-      onAddSponsor?.(formData);
-      setIsAddDialogOpen(false);
+    try {
+      if (selectedSponsor) {
+        // Update existing sponsor
+        await updateSponsor(selectedSponsor.id, formData);
+        toast({
+          title: "Éxito",
+          description: "Sponsor actualizado correctamente",
+        });
+        setIsEditDialogOpen(false);
+      } else {
+        // Add new sponsor
+        await createSponsor(formData);
+        toast({
+          title: "Éxito",
+          description: "Sponsor creado correctamente",
+        });
+        setIsAddDialogOpen(false);
+      }
+      setFormData({ name: "", email: "", clubId: "" });
+      setSelectedSponsor(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      clubId: "club-1",
-    });
-    setSelectedSponsor(null);
   };
 
   // Handle delete
-  const handleDelete = (id: string) => {
-    setSponsors(sponsors.filter((s) => s.id !== id));
-    onDeleteSponsor?.(id);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSponsor(id);
+      toast({
+        title: "Éxito",
+        description: "Sponsor eliminado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle edit
@@ -172,6 +177,118 @@ export function SponsorsSection({
     setSelectedSponsor(sponsor);
     setIsViewDialogOpen(true);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando sponsors...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje cuando no hay sponsors
+  if (sponsors.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Sponsors</h1>
+            <p className="text-muted-foreground">
+              Gestiona los sponsors del club
+            </p>
+          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Sponsor
+          </Button>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Building className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            No hay sponsors registrados
+          </h3>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Comienza agregando el primer sponsor al club para gestionar las
+            relaciones comerciales.
+          </p>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Primer Sponsor
+          </Button>
+        </div>
+
+        {/* Add Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Sponsor</DialogTitle>
+              <DialogDescription>
+                Agrega un nuevo sponsor al club.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Agregar Sponsor
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -201,19 +318,7 @@ export function SponsorsSection({
               className="pl-8"
             />
           </div>
-          <Select value={clubFilter} onValueChange={setClubFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por club" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los clubs</SelectItem>
-              {clubs.map((club) => (
-                <SelectItem key={club.id} value={club.id}>
-                  {club.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Club filter removed since we're managing a single club */}
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -476,11 +581,8 @@ export function SponsorsSection({
                   <SelectValue placeholder="Seleccionar club" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.id}>
-                      {club.name}
-                    </SelectItem>
-                  ))}
+                  {/* Club selection removed since we're managing a single club */}
+                  <SelectItem value="current">Club actual</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -543,11 +645,8 @@ export function SponsorsSection({
                   <SelectValue placeholder="Seleccionar club" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.id}>
-                      {club.name}
-                    </SelectItem>
-                  ))}
+                  {/* Club selection removed since we're managing a single club */}
+                  <SelectItem value="current">Club actual</SelectItem>
                 </SelectContent>
               </Select>
             </div>

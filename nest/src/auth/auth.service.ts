@@ -299,6 +299,11 @@ export class AuthService {
     }
 
     async getProfile(userId: string) {
+        const user = await this.usersService.findOne(userId);
+        if (!user) {
+            throw new UnauthorizedException('Usuario no encontrado');
+        }
+
         const userClub = await this.prisma.userClub.findFirst({
             where: { userId },
             include: {
@@ -318,6 +323,9 @@ export class AuthService {
         const permissions = userClub?.role?.permissions?.map(rp => rp.permission.name) || [];
 
         return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
             clubId: userClub?.clubId,
             role: userClub?.role?.name,
             permissions,

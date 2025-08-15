@@ -1,6 +1,6 @@
 // Configuración del backend
 export const BACKEND_CONFIG = {
-    BASE_URL: process.env.BACKEND_URL || "http://localhost:3000",
+    BASE_URL: process.env.BACKEND_URL || "http://localhost:3001",
     AUTH_ENDPOINTS: {
         LOGIN: "/auth/login",
         REGISTER: "/auth/register",
@@ -24,7 +24,7 @@ export const BACKEND_CONFIG = {
 
 // Configuración del frontend
 export const FRONTEND_CONFIG = {
-    BASE_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3001",
+    BASE_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000",
     ROUTES: {
         HOME: "/home",
         LOGIN: "/login",

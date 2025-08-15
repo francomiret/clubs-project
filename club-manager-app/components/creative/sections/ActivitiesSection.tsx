@@ -12,6 +12,7 @@ import {
   Eye,
   Calendar,
   Activity,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -50,26 +52,22 @@ import {
   CreateActivityData,
   UpdateActivityData,
 } from "../types";
-
+import { useActivities } from "@/hooks/useActivities";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDate } from "@/lib/utils";
 
-interface ActivitiesSectionProps {
-  activities: ActivityType[];
-  onAddActivity?: (activity: CreateActivityData) => void;
-  onUpdateActivity?: (id: string, activity: UpdateActivityData) => void;
-  onDeleteActivity?: (id: string) => void;
-}
-
-export function ActivitiesSection({
-  activities: initialActivities,
-  onAddActivity,
-  onUpdateActivity,
-  onDeleteActivity,
-}: ActivitiesSectionProps) {
+export function ActivitiesSection() {
+  const {
+    activities,
+    loading,
+    error,
+    createActivity,
+    updateActivity,
+    deleteActivity,
+  } = useActivities();
+  const { toast } = useToast();
   const { t } = useLanguage();
-  const [activities, setActivities] =
-    useState<ActivityType[]>(initialActivities);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -82,6 +80,7 @@ export function ActivitiesSection({
     name: "",
     description: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredActivities = activities.filter((activity) => {
     const matchesSearch =
@@ -91,39 +90,37 @@ export function ActivitiesSection({
     return matchesSearch;
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedActivity) {
-      // Update existing activity
-      const updatedActivity: ActivityType = {
-        ...selectedActivity,
-        ...formData,
-      };
-      setActivities(
-        activities.map((a) =>
-          a.id === selectedActivity.id ? updatedActivity : a
-        )
-      );
-      onUpdateActivity?.(selectedActivity.id, formData);
-      setIsEditDialogOpen(false);
-    } else {
-      // Add new activity
-      const newActivity: ActivityType = {
-        id: Date.now().toString(),
-        ...formData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setActivities([...activities, newActivity]);
-      onAddActivity?.(formData);
-      setIsAddDialogOpen(false);
+    setIsSubmitting(true);
+
+    try {
+      if (selectedActivity) {
+        await updateActivity(selectedActivity.id, formData);
+        toast({
+          title: "Éxito",
+          description: "Actividad actualizada correctamente",
+        });
+        setIsEditDialogOpen(false);
+      } else {
+        await createActivity(formData);
+        toast({
+          title: "Éxito",
+          description: "Actividad creada correctamente",
+        });
+        setIsAddDialogOpen(false);
+      }
+      resetForm();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    setFormData({
-      name: "",
-      description: "",
-      clubId: "",
-    });
-    setSelectedActivity(null);
   };
 
   const handleEdit = (activity: ActivityType) => {
@@ -135,9 +132,21 @@ export function ActivitiesSection({
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = (activityId: string) => {
-    setActivities(activities.filter((a) => a.id !== activityId));
-    onDeleteActivity?.(activityId);
+  const handleDelete = async (activityId: string) => {
+    try {
+      await deleteActivity(activityId);
+      toast({
+        title: "Éxito",
+        description: "Actividad eliminada correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleView = (activity: ActivityType) => {
@@ -152,6 +161,116 @@ export function ActivitiesSection({
     });
     setSelectedActivity(null);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando actividades...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje cuando no hay actividades
+  if (activities.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Actividades</h1>
+            <p className="text-muted-foreground">
+              Gestiona las actividades del club
+            </p>
+          </div>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Actividad
+          </Button>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <Activity className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            No hay actividades registradas
+          </h3>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Comienza agregando la primera actividad al club para gestionar los
+            eventos y programas.
+          </p>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Primera Actividad
+          </Button>
+        </div>
+
+        {/* Add Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Actividad</DialogTitle>
+              <DialogDescription>
+                Agrega una nueva actividad al club.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Descripción</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  rows={4}
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {selectedActivity ? t("common.update") : t("common.save")}
+                  {isSubmitting && (
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -422,8 +541,11 @@ export function ActivitiesSection({
               >
                 {t("common.cancel")}
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={isSubmitting}>
                 {selectedActivity ? t("common.update") : t("common.save")}
+                {isSubmitting && (
+                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                )}
               </Button>
             </div>
           </form>

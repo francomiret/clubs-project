@@ -229,6 +229,24 @@ export interface Club {
     updatedAt?: Date
 }
 
+export interface CreateClubData {
+    name: string
+    alias?: string
+    logo?: string
+    location?: string
+    foundationDate?: Date
+    description?: string
+}
+
+export interface UpdateClubData {
+    name?: string
+    alias?: string
+    logo?: string
+    location?: string
+    foundationDate?: string
+    description?: string
+}
+
 // Property types
 export interface Property {
     id: string

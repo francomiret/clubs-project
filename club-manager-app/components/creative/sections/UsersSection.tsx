@@ -14,6 +14,7 @@ import {
   User,
   Grid3X3,
   List,
+  Loader2,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -62,27 +63,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { User as UserType, CreateUserData, UpdateUserData } from "../types";
+import { useUsers } from "@/hooks/useUsers";
+import { useToast } from "@/hooks/use-toast";
 
-interface UsersSectionProps {
-  users: UserType[];
-  onAddUser?: (user: CreateUserData) => void;
-  onUpdateUser?: (id: string, user: UpdateUserData) => void;
-  onDeleteUser?: (id: string) => void;
-}
-
-export function UsersSection({
-  users: initialUsers,
-  onAddUser,
-  onUpdateUser,
-  onDeleteUser,
-}: UsersSectionProps) {
-  const [users, setUsers] = useState<UserType[]>(initialUsers);
+export function UsersSection() {
+  const { users, loading, error, createUser, updateUser, deleteUser } =
+    useUsers();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"cards" | "grid">("grid");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [formData, setFormData] = useState<CreateUserData>({
@@ -101,59 +95,197 @@ export function UsersSection({
   });
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    if (selectedUser) {
-      // Update existing user
-      const updatedUser = { ...selectedUser, ...formData };
-      setUsers(users.map((u) => (u.id === selectedUser.id ? updatedUser : u)));
-      onUpdateUser?.(selectedUser.id, formData);
-      setIsEditDialogOpen(false);
-    } else {
-      // Add new user
-      const newUser: UserType = {
-        id: Date.now().toString(),
-        ...formData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setUsers([...users, newUser]);
-      onAddUser?.(formData);
-      setIsAddDialogOpen(false);
+    try {
+      if (selectedUser) {
+        await updateUser(selectedUser.id, formData);
+        toast({
+          title: "Éxito",
+          description: "Usuario actualizado correctamente",
+        });
+        setIsEditDialogOpen(false);
+      } else {
+        await createUser(formData);
+        toast({ title: "Éxito", description: "Usuario creado correctamente" });
+        setIsAddDialogOpen(false);
+      }
+      setFormData({
+        email: "",
+        password: "",
+        name: "",
+      });
+      setSelectedUser(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Reset form
-    setFormData({
-      email: "",
-      password: "",
-      name: "",
-    });
-    setSelectedUser(null);
   };
 
-  // Handle delete
-  const handleDelete = (id: string) => {
-    setUsers(users.filter((u) => u.id !== id));
-    onDeleteUser?.(id);
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteUser(id);
+      toast({
+        title: "Éxito",
+        description: "Usuario eliminado correctamente",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Handle edit
   const handleEdit = (user: UserType) => {
     setSelectedUser(user);
     setFormData({
       email: user.email,
-      password: user.password,
+      password: "",
       name: user.name,
     });
     setIsEditDialogOpen(true);
   };
 
-  // Handle view
   const handleView = (user: UserType) => {
     setSelectedUser(user);
     setIsViewDialogOpen(true);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Cargando usuarios...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar mensaje cuando no hay usuarios
+  if (users.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Usuarios</h1>
+            <p className="text-muted-foreground">
+              Gestiona los usuarios del sistema
+            </p>
+          </div>
+
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Usuario
+          </Button>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex flex-col items-center justify-center h-64 text-center">
+          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+            <User className="h-12 w-12 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            No hay usuarios registrados
+          </h3>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Comienza agregando el primer usuario al sistema para gestionar el
+            acceso.
+          </p>
+          <Button onClick={() => setIsAddDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Agregar Primer Usuario
+          </Button>
+        </div>
+
+        {/* Add Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Agregar Usuario</DialogTitle>
+              <DialogDescription>
+                Agrega un nuevo usuario al sistema.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Nombre</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    "Agregar Usuario"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -446,7 +578,13 @@ export function UsersSection({
               >
                 Cancelar
               </Button>
-              <Button type="submit">Agregar Usuario</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "Agregar Usuario"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -505,7 +643,13 @@ export function UsersSection({
               >
                 Cancelar
               </Button>
-              <Button type="submit">Actualizar Usuario</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  "Actualizar Usuario"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
