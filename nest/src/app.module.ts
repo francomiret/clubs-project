@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { PropertiesModule } from './properties/properties.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     AuthModule,
     RolesModule,
     PermissionsModule,
+    PropertiesModule,
   ],
   controllers: [],
   providers: [],

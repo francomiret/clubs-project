@@ -8,15 +8,16 @@ datasource db {
 }
 
 model Club {
-  id        String     @id @default(uuid())
-  name      String
-  users     UserClub[]
-  roles     Role[]
-  members   Member[]
-  sponsors  Sponsor[]
-  payments  Payment[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id         String     @id @default(uuid())
+  name       String
+  users      UserClub[]
+  roles      Role[]
+  members    Member[]
+  sponsors   Sponsor[]
+  payments   Payment[]
+  properties Property[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
 }
 
 model User {
@@ -101,4 +102,20 @@ model Payment {
   club        Club     @relation(fields: [clubId], references: [id])
   member      Member?  @relation(fields: [memberId], references: [id])
   sponsor     Sponsor? @relation(fields: [sponsorId], references: [id])
+}
+
+model Property {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  address     String
+  type        String
+  capacity    Int?
+  amenities   String[]
+  clubId      String
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  club Club @relation(fields: [clubId], references: [id])
 }
