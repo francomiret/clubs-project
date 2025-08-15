@@ -16,6 +16,7 @@ model Club {
   sponsors   Sponsor[]
   payments   Payment[]
   properties Property[]
+  activities Activity[]
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
@@ -116,6 +117,24 @@ model Property {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  club Club @relation(fields: [clubId], references: [id])
+}
+
+model Activity {
+  id                  String   @id @default(uuid())
+  name                String
+  description         String?
+  type                String
+  startDate           DateTime
+  endDate             DateTime
+  location            String
+  maxParticipants     Int?
+  currentParticipants Int      @default(0)
+  clubId              String
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   club Club @relation(fields: [clubId], references: [id])
 }

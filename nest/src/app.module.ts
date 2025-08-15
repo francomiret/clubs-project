@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { RolesModule } from './roles/roles.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { PropertiesModule } from './properties/properties.module';
+import { ActivitiesModule } from './activities/activities.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PropertiesModule } from './properties/properties.module';
     RolesModule,
     PermissionsModule,
     PropertiesModule,
+    ActivitiesModule,
   ],
   controllers: [],
   providers: [],
