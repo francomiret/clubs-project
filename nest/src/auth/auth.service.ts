@@ -143,6 +143,7 @@ export class AuthService {
         const club = await this.prisma.club.create({
             data: {
                 name: registerDto.clubName,
+                alias: registerDto.clubName.substring(0, 3).toUpperCase(), // Generar alias automáticamente
             },
         });
 

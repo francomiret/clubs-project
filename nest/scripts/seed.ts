@@ -7,8 +7,10 @@ const SEED_CONFIG = {
   CLUB: {
     name: 'Club Deportivo Ejemplo',
     alias: 'CDE',
-    location: 'Ciudad Ejemplo',
+    address: 'Av. Principal 123, Ciudad Ejemplo',
+    image: null, // Base64 image placeholder
     foundationDate: new Date('2020-01-01'),
+    description: 'Club deportivo dedicado al desarrollo de talentos y promoción del deporte en la comunidad.',
   },
   ROLES: [
     { name: 'ADMIN' },
@@ -78,6 +80,11 @@ async function main() {
       create: {
         id: 'default-club',
         name: SEED_CONFIG.CLUB.name,
+        alias: SEED_CONFIG.CLUB.alias,
+        address: SEED_CONFIG.CLUB.address,
+        image: SEED_CONFIG.CLUB.image,
+        foundationDate: SEED_CONFIG.CLUB.foundationDate,
+        description: SEED_CONFIG.CLUB.description,
       },
     });
     console.log(`✅ Club creado: ${club.name}`);

@@ -8,17 +8,22 @@ datasource db {
 }
 
 model Club {
-  id         String     @id @default(uuid())
-  name       String
-  users      UserClub[]
-  roles      Role[]
-  members    Member[]
-  sponsors   Sponsor[]
-  payments   Payment[]
-  properties Property[]
-  activities Activity[]
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
+  id             String     @id @default(uuid())
+  name           String
+  alias          String
+  address        String?
+  image          String? // Base64 encoded image
+  foundationDate DateTime?
+  description    String?
+  users          UserClub[]
+  roles          Role[]
+  members        Member[]
+  sponsors       Sponsor[]
+  payments       Payment[]
+  properties     Property[]
+  activities     Activity[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 }
 
 model User {

@@ -6,10 +6,14 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthError } from "@/hooks/useAuthError";
+import { useAuthPersistence } from "@/hooks/useAuthPersistence";
+import { useAuthVerification } from "@/hooks/useAuthVerification";
 import { checkBackendHealth, logHealthStatus } from "@/lib/health-check";
+import { fetchWithAuth } from "@/lib/auth-interceptor";
 
 interface User {
   id: string;
@@ -23,6 +27,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isInitialized: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (
     name: string,
@@ -44,109 +49,42 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { setAuthError, clearError } = useAuthError();
+  const {
+    user: persistedUser,
+    isLoading: persistenceLoading,
+    isInitialized,
+    saveAuthState,
+    clearAuthState,
+    updateUser,
+    updateTokens,
+  } = useAuthPersistence();
 
-  // Check if user is logged in on mount
+  const { verifyAuth } = useAuthVerification();
+
+  const [user, setUser] = useState<User | null>(persistedUser);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Sincronizar el estado local con el persistido
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        setIsLoading(true);
-        clearError(); // Limpiar errores previos
-
-        // Verificar salud del backend primero
-        console.log("🔍 Verificando salud del backend...");
-        const healthResult = await checkBackendHealth();
-        logHealthStatus(healthResult);
-
-        if (!healthResult.isHealthy) {
-          setAuthError(
-            `Backend no disponible: ${
-              healthResult.error || "Error de conexión"
-            }`,
-            "BACKEND_UNREACHABLE"
-          );
-          setUser(null);
-          return;
-        }
-
-        // Check for token in localStorage
-        const token = localStorage.getItem("authToken");
-
-        if (token) {
-          // Validate token with backend
-          const response = await fetch("/api/auth/me", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (response.ok) {
-            const userData = await response.json();
-            // Validar que userData tenga la estructura correcta
-            if (userData && userData.id && userData.email) {
-              setUser(userData);
-            } else {
-              console.error("Respuesta del servidor inválida:", userData);
-              setAuthError("Datos de usuario inválidos", "INVALID_USER_DATA");
-              throw new Error("Datos de usuario inválidos");
-            }
-          } else {
-            // Token is invalid, try to refresh
-            const refreshToken = localStorage.getItem("refreshToken");
-            if (refreshToken) {
-              try {
-                await refreshAuthToken();
-              } catch (error) {
-                console.error("Error al refrescar token:", error);
-                setAuthError("Error al renovar la sesión", "REFRESH_FAILED");
-                // Refresh failed, remove tokens
-                localStorage.removeItem("authToken");
-                localStorage.removeItem("refreshToken");
-                setUser(null);
-              }
-            } else {
-              setAuthError("Sesión expirada", "TOKEN_EXPIRED");
-              localStorage.removeItem("authToken");
-              setUser(null);
-            }
-          }
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error("Error en verificación de autenticación:", error);
-        setAuthError(
-          "Error de verificación de autenticación",
-          "AUTH_CHECK_FAILED"
-        );
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("refreshToken");
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Always check authentication on mount
-    checkAuth();
-  }, [clearError, setAuthError]); // Only runs on mount
-
-  const refreshAuthToken = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) {
-      throw new Error("No refresh token available");
+    if (isInitialized) {
+      setUser(persistedUser);
+      setIsLoading(false);
     }
+  }, [isInitialized, persistedUser]);
 
+  // Función para refrescar el token
+  const refreshAuthToken = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/refresh", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ refreshToken }),
+        body: JSON.stringify({
+          refreshToken: localStorage.getItem("refreshToken"),
+        }),
       });
 
       if (!response.ok) {
@@ -160,20 +98,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error("Invalid refresh response");
       }
 
-      localStorage.setItem("authToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
+      // Actualizar tokens en localStorage
+      updateTokens(data.accessToken, data.refreshToken);
 
-      // After successful refresh, get user data
-      const userResponse = await fetch("/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${data.accessToken}`,
-        },
-      });
-
+      // Obtener datos del usuario actualizados
+      const userResponse = await fetchWithAuth("/api/auth/me");
       if (userResponse.ok) {
         const userData = await userResponse.json();
         if (userData && userData.id && userData.email) {
+          updateUser(userData);
           setUser(userData);
+          return userData;
         } else {
           throw new Error("Invalid user data after refresh");
         }
@@ -184,11 +119,84 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Token refresh failed:", error);
       throw error;
     }
-  };
+  }, [updateTokens, updateUser]);
+
+  // Función para verificar la autenticación
+  const checkAuth = useCallback(async (): Promise<boolean> => {
+    if (!persistedUser) {
+      return false;
+    }
+
+    try {
+      const healthResult = await checkBackendHealth();
+      logHealthStatus(healthResult);
+
+      if (!healthResult.isHealthy) {
+        setAuthError(
+          `Backend no disponible: ${healthResult.error || "Error de conexión"}`,
+          "BACKEND_UNREACHABLE"
+        );
+        return false;
+      }
+
+      // Verificar si el token actual es válido
+      const response = await fetchWithAuth("/api/auth/me");
+
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData && userData.id && userData.email) {
+          // Solo actualizar si los datos son diferentes
+          if (JSON.stringify(userData) !== JSON.stringify(persistedUser)) {
+            updateUser(userData);
+            setUser(userData);
+          }
+          return true;
+        } else {
+          throw new Error("Datos de usuario inválidos");
+        }
+      } else if (response.status === 401) {
+        // Token expirado, intentar refresh
+        await refreshAuthToken();
+        return true;
+      } else {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error("Error en verificación de autenticación:", error);
+      if (error instanceof Error && error.message.includes("No auth token")) {
+        // No hay token, limpiar estado
+        clearAuthState();
+        setUser(null);
+      } else {
+        setAuthError(
+          "Error de verificación de autenticación",
+          "AUTH_CHECK_FAILED"
+        );
+      }
+      return false;
+    }
+  }, [
+    persistedUser,
+    refreshAuthToken,
+    setAuthError,
+    updateUser,
+    clearAuthState,
+  ]);
+
+  // Solo verificar autenticación una vez al inicializar si hay usuario persistido
+  useEffect(() => {
+    if (isInitialized && persistedUser && !persistenceLoading) {
+      // Usar el hook de verificación para evitar verificaciones simultáneas
+      verifyAuth(checkAuth, undefined, (error) => {
+        console.error("Initial auth verification failed:", error);
+      });
+    }
+  }, [isInitialized, persistedUser, persistenceLoading, verifyAuth, checkAuth]);
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      clearError();
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -198,12 +206,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ email, password }),
       });
 
-      // Verificar si la respuesta tiene cuerpo antes de hacer .json()
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
 
       if (!response.ok) {
-        // Mejorar el mensaje de error
         const errorMsg =
           data.message ||
           (response.status === 401
@@ -219,23 +225,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         );
       }
 
-      // Store tokens
-      localStorage.setItem("authToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-
+      // Guardar estado en localStorage
+      saveAuthState(data.user, data.accessToken, data.refreshToken);
       setUser(data.user);
       router.push("/home");
     } catch (error) {
       console.error("Login failed:", error);
-      // Limpiar tokens en caso de error
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("refreshToken");
-      setUser(null);
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
+
   const register = async (
     name: string,
     email: string,
@@ -244,6 +245,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   ) => {
     try {
       setIsLoading(true);
+      clearError();
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -256,63 +258,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const responseText = await response.text();
       const data = responseText ? JSON.parse(responseText) : {};
 
-      console.log("Register response:", data); // Para depuración
-
       if (!response.ok) {
         throw new Error(data.message || "Error al registrar usuario");
       }
 
-      // Verificar que la respuesta tenga la estructura correcta
       if (!data.accessToken || !data.refreshToken || !data.user) {
         console.error("Respuesta incompleta del servidor:", data);
         throw new Error("Respuesta del servidor incompleta");
       }
 
-      // Store tokens
-      localStorage.setItem("authToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-
-      // Set user data
+      // Guardar estado en localStorage
+      saveAuthState(data.user, data.accessToken, data.refreshToken);
       setUser(data.user);
-
-      // Redirect to dashboard
       router.push("/home");
     } catch (error) {
       console.error("Registration failed:", error);
-      // Limpiar tokens en caso de error
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("refreshToken");
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    // Remove tokens
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("refreshToken");
-
-    // Clear user data
+  const logout = useCallback(() => {
+    // Limpiar estado
+    clearAuthState();
     setUser(null);
+    clearError();
 
     // Redirect to login
     router.push("/login");
-  };
-
-  const refreshToken = async () => {
-    await refreshAuthToken();
-  };
+  }, [router, clearError, clearAuthState]);
 
   const value: AuthContextType = {
     user,
-    isLoading,
+    isLoading: isLoading || persistenceLoading,
+    isInitialized,
     login,
     register,
     logout,
     isAuthenticated: !!user,
-    refreshToken,
-    error: null, // Assuming error state is managed by useAuthError
+    refreshToken: refreshAuthToken,
+    error: null,
     clearError,
   };
 

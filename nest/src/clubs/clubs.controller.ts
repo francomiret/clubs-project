@@ -6,6 +6,9 @@ import { ClubEntity } from './entities/club.entity';
 import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
 import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
 import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserEntity } from '../users/entities/user.entity';
 
 @ApiTags('clubs')
 @Controller('clubs')
@@ -53,6 +56,25 @@ export class ClubsController {
     @ApiResponse({ status: 403, description: 'No autorizado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.clubsService.findAllPaginated(query);
+    }
+
+    @Get('my-club')
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Obtener el club del usuario actual' })
+    @ApiResponse({
+        status: 200,
+        description: 'Club del usuario obtenido exitosamente',
+        type: ClubEntity,
+    })
+    @ApiResponse({ status: 404, description: 'Club no encontrado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
+    async getMyClub(@CurrentUser() user: UserEntity) {
+        // Obtener el primer club del usuario (asumiendo que un usuario solo puede estar en un club)
+        const userClub = user.clubs?.[0];
+        if (!userClub) {
+            throw new Error('Usuario no pertenece a ningún club');
+        }
+        return this.clubsService.findOne(userClub.clubId);
     }
 
     @Get(':id')
