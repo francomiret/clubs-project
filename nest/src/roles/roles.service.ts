@@ -21,7 +21,47 @@ export class RolesService {
             throw new ConflictException(`El rol "${data.name}" ya existe en este club`);
         }
 
-        return this.rolesRepository.create(data);
+        // Crear el rol con transacción para manejar permisos
+        const result = await this.prisma.$transaction(async (prisma) => {
+            // Crear el rol
+            const role = await prisma.role.create({
+                data: {
+                    name: data.name,
+                    clubId: data.clubId,
+                },
+            });
+
+            // Si se proporcionan permisos, crearlos en RolePermission
+            if (data.permissionIds && data.permissionIds.length > 0) {
+                const rolePermissions = data.permissionIds.map(permissionId => ({
+                    roleId: role.id,
+                    permissionId: permissionId,
+                }));
+
+                await prisma.rolePermission.createMany({
+                    data: rolePermissions,
+                });
+            }
+
+            // Retornar el rol con permisos
+            return prisma.role.findUnique({
+                where: { id: role.id },
+                include: {
+                    permissions: {
+                        include: {
+                            permission: true,
+                        },
+                    },
+                },
+            });
+        });
+
+        // Verificar que el resultado no sea null
+        if (!result) {
+            throw new Error('Error al crear el rol');
+        }
+
+        return result;
     }
 
     async findAll(): Promise<Role[]> {
@@ -69,7 +109,56 @@ export class RolesService {
             }
         }
 
-        return this.rolesRepository.update(id, data);
+        // Actualizar el rol con transacción para manejar permisos
+        const result = await this.prisma.$transaction(async (prisma) => {
+            // Actualizar el rol
+            const updatedRole = await prisma.role.update({
+                where: { id },
+                data: {
+                    name: data.name,
+                    clubId: data.clubId,
+                },
+            });
+
+            // Si se proporcionan permisos, actualizar RolePermission
+            if (data.permissionIds !== undefined) {
+                // Eliminar permisos existentes
+                await prisma.rolePermission.deleteMany({
+                    where: { roleId: id },
+                });
+
+                // Crear nuevos permisos si se proporcionan
+                if (data.permissionIds.length > 0) {
+                    const rolePermissions = data.permissionIds.map(permissionId => ({
+                        roleId: id,
+                        permissionId: permissionId,
+                    }));
+
+                    await prisma.rolePermission.createMany({
+                        data: rolePermissions,
+                    });
+                }
+            }
+
+            // Retornar el rol actualizado con permisos
+            return prisma.role.findUnique({
+                where: { id },
+                include: {
+                    permissions: {
+                        include: {
+                            permission: true,
+                        },
+                    },
+                },
+            });
+        });
+
+        // Verificar que el resultado no sea null
+        if (!result) {
+            throw new Error('Error al actualizar el rol');
+        }
+
+        return result;
     }
 
     async remove(id: string): Promise<Role> {
@@ -106,19 +195,6 @@ export class RolesService {
                 userId: data.userId,
                 clubId: data.clubId,
                 roleId: data.roleId,
-            },
-            include: {
-                user: true,
-                role: {
-                    include: {
-                        permissions: {
-                            include: {
-                                permission: true,
-                            },
-                        },
-                    },
-                },
-                club: true,
             },
         });
     }

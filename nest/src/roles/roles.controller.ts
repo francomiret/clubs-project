@@ -8,6 +8,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserEntity } from '../users/entities/user.entity';
 
 @ApiTags('roles')
 @ApiBearerAuth()
@@ -46,6 +48,25 @@ export class RolesController {
     @ApiResponse({ status: 403, description: 'No autorizado' })
     findAll() {
         return this.rolesService.findAll();
+    }
+
+    @Get('my-club')
+    @RequirePermissions('roles.read')
+    @ApiOperation({ summary: 'Obtener roles del club del usuario actual' })
+    @ApiResponse({
+        status: 200,
+        description: 'Roles del club del usuario obtenidos exitosamente',
+        type: [RoleEntity],
+    })
+    @ApiResponse({ status: 403, description: 'Sin permisos para leer roles' })
+    @ApiResponse({ status: 403, description: 'No autorizado' })
+    findMyClubRoles(@CurrentUser() user: UserEntity) {
+        // Obtener el primer club del usuario (asumiendo que un usuario solo puede estar en un club)
+        const userClub = user.clubs?.[0];
+        if (!userClub) {
+            throw new Error('Usuario no pertenece a ningún club');
+        }
+        return this.rolesService.findByClubId(userClub.clubId);
     }
 
     @Get('paginated')
