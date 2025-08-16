@@ -4,18 +4,17 @@ import { SponsorsService } from './sponsors.service';
 import { CreateSponsorDto, UpdateSponsorDto } from './dto';
 import { SponsorEntity } from './entities/sponsor.entity';
 import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
-import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('sponsors')
-@UseGuards(AuthorizationGuard)
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller('sponsors')
 export class SponsorsController {
     constructor(private readonly sponsorsService: SponsorsService) { }
 
     @Post()
-    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Crear un nuevo patrocinador' })
     @ApiResponse({
         status: 201,
@@ -23,19 +22,19 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     create(@Body() createSponsorDto: CreateSponsorDto) {
         return this.sponsorsService.create(createSponsorDto);
     }
 
     @Get()
-    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Obtener todos los patrocinadores' })
     @ApiResponse({
         status: 200,
         description: 'Lista de patrocinadores obtenida exitosamente',
         type: [SponsorEntity],
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findAll() {
         return this.sponsorsService.findAll();
     }
@@ -48,12 +47,12 @@ export class SponsorsController {
         description: 'Lista paginada de patrocinadores obtenida exitosamente',
         type: PaginationResponseDto,
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.sponsorsService.findAllPaginated(query);
     }
 
     @Get('club/:clubId')
-    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Obtener patrocinadores por club' })
     @ApiParam({ name: 'clubId', description: 'ID del club' })
     @ApiResponse({
@@ -61,6 +60,7 @@ export class SponsorsController {
         description: 'Patrocinadores del club obtenidos exitosamente',
         type: [SponsorEntity],
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findByClubId(@Param('clubId') clubId: string) {
         return this.sponsorsService.findByClubId(clubId);
     }
@@ -74,12 +74,12 @@ export class SponsorsController {
         description: 'Lista paginada de patrocinadores del club obtenida exitosamente',
         type: PaginationResponseDto,
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findByClubIdPaginated(@Param('clubId') clubId: string, @Query() query: PaginationQueryDto) {
         return this.sponsorsService.findByClubIdPaginated(clubId, query);
     }
 
     @Get(':id')
-    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Obtener un patrocinador por ID' })
     @ApiParam({ name: 'id', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -88,13 +88,12 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 404, description: 'Patrocinador no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findOne(@Param('id') id: string) {
         return this.sponsorsService.findOne(id);
     }
 
     @Patch(':id')
-    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Actualizar un patrocinador' })
     @ApiParam({ name: 'id', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -103,13 +102,12 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 404, description: 'Patrocinador no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     update(@Param('id') id: string, @Body() updateSponsorDto: UpdateSponsorDto) {
         return this.sponsorsService.update(id, updateSponsorDto);
     }
 
     @Delete(':id')
-    @RequirePermission('sponsors', 'read')
     @ApiOperation({ summary: 'Eliminar un patrocinador' })
     @ApiParam({ name: 'id', description: 'ID del patrocinador' })
     @ApiResponse({
@@ -118,7 +116,7 @@ export class SponsorsController {
         type: SponsorEntity,
     })
     @ApiResponse({ status: 404, description: 'Patrocinador no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     remove(@Param('id') id: string) {
         return this.sponsorsService.remove(id);
     }

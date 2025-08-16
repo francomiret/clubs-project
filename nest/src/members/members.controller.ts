@@ -4,18 +4,17 @@ import { MembersService } from './members.service';
 import { CreateMemberDto, UpdateMemberDto } from './dto';
 import { MemberEntity } from './entities/member.entity';
 import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
-import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('members')
-@UseGuards(AuthorizationGuard)
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 @Controller('members')
 export class MembersController {
     constructor(private readonly membersService: MembersService) { }
 
     @Post()
-    @RequirePermission('members', 'read')
     @ApiOperation({ summary: 'Crear un nuevo miembro' })
     @ApiResponse({
         status: 201,
@@ -23,19 +22,19 @@ export class MembersController {
         type: MemberEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     create(@Body() createMemberDto: CreateMemberDto) {
         return this.membersService.create(createMemberDto);
     }
 
     @Get()
-    @RequirePermission('members', 'read')
     @ApiOperation({ summary: 'Obtener todos los miembros' })
     @ApiResponse({
         status: 200,
         description: 'Lista de miembros obtenida exitosamente',
         type: [MemberEntity],
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findAll() {
         return this.membersService.findAll();
     }
@@ -48,12 +47,12 @@ export class MembersController {
         description: 'Lista paginada de miembros obtenida exitosamente',
         type: PaginationResponseDto,
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.membersService.findAllPaginated(query);
     }
 
     @Get('club/:clubId')
-    @RequirePermission('members', 'read')
     @ApiOperation({ summary: 'Obtener miembros por club' })
     @ApiParam({ name: 'clubId', description: 'ID del club' })
     @ApiResponse({
@@ -61,6 +60,7 @@ export class MembersController {
         description: 'Miembros del club obtenidos exitosamente',
         type: [MemberEntity],
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findByClubId(@Param('clubId') clubId: string) {
         return this.membersService.findByClubId(clubId);
     }
@@ -74,12 +74,12 @@ export class MembersController {
         description: 'Lista paginada de miembros del club obtenida exitosamente',
         type: PaginationResponseDto,
     })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findByClubIdPaginated(@Param('clubId') clubId: string, @Query() query: PaginationQueryDto) {
         return this.membersService.findByClubIdPaginated(clubId, query);
     }
 
     @Get(':id')
-    @RequirePermission('members', 'read')
     @ApiOperation({ summary: 'Obtener un miembro por ID' })
     @ApiParam({ name: 'id', description: 'ID del miembro' })
     @ApiResponse({
@@ -88,13 +88,12 @@ export class MembersController {
         type: MemberEntity,
     })
     @ApiResponse({ status: 404, description: 'Miembro no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findOne(@Param('id') id: string) {
         return this.membersService.findOne(id);
     }
 
     @Patch(':id')
-    @RequirePermission('members', 'read')
     @ApiOperation({ summary: 'Actualizar un miembro' })
     @ApiParam({ name: 'id', description: 'ID del miembro' })
     @ApiResponse({
@@ -103,13 +102,12 @@ export class MembersController {
         type: MemberEntity,
     })
     @ApiResponse({ status: 404, description: 'Miembro no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     update(@Param('id') id: string, @Body() updateMemberDto: UpdateMemberDto) {
         return this.membersService.update(id, updateMemberDto);
     }
 
     @Delete(':id')
-    @RequirePermission('members', 'read')
     @ApiOperation({ summary: 'Eliminar un miembro' })
     @ApiParam({ name: 'id', description: 'ID del miembro' })
     @ApiResponse({
@@ -118,7 +116,7 @@ export class MembersController {
         type: MemberEntity,
     })
     @ApiResponse({ status: 404, description: 'Miembro no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     remove(@Param('id') id: string) {
         return this.membersService.remove(id);
     }

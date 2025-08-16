@@ -14,18 +14,15 @@ import { CreatePaymentDto, UpdatePaymentDto } from './dto';
 import { PaymentFilterDto } from './dto/payment-dashboard.dto';
 import { PaymentType } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserEntity } from '../users/entities/user.entity';
 
 @Controller('payments')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Post()
-    @Roles('ADMIN', 'MANAGER')
     create(@Body() createPaymentDto: CreatePaymentDto, @CurrentUser() user: UserEntity) {
         return this.paymentsService.create(createPaymentDto);
     }
@@ -87,13 +84,11 @@ export class PaymentsController {
     }
 
     @Patch(':id')
-    @Roles('ADMIN', 'MANAGER')
     update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
         return this.paymentsService.update(id, updatePaymentDto);
     }
 
     @Delete(':id')
-    @Roles('ADMIN')
     remove(@Param('id') id: string) {
         return this.paymentsService.remove(id);
     }

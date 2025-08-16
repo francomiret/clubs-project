@@ -5,20 +5,15 @@ import { CreatePermissionDto, UpdatePermissionDto } from './dto';
 import { PermissionEntity } from './entities/permission.entity';
 import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PermissionsGuard } from '../auth/guards/permissions.guard';
-import { RequirePermissions } from '../auth/decorators/permissions.decorator';
-import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
-import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
 
 @ApiTags('permissions')
 @ApiBearerAuth()
 @Controller('permissions')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard)
 export class PermissionsController {
     constructor(private readonly permissionsService: PermissionsService) { }
 
     @Post()
-    @RequirePermissions('permissions.create')
     @ApiOperation({ summary: 'Crear un nuevo permiso' })
     @ApiResponse({
         status: 201,
@@ -26,31 +21,25 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 400, description: 'Datos inválidos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
-    @ApiResponse({ status: 403, description: 'Sin permisos para crear permisos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     @ApiResponse({ status: 409, description: 'El permiso ya existe' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
     create(@Body() createPermissionDto: CreatePermissionDto) {
         return this.permissionsService.create(createPermissionDto);
     }
 
     @Get()
-    @RequirePermissions('permissions.read')
     @ApiOperation({ summary: 'Obtener todos los permisos' })
     @ApiResponse({
         status: 200,
         description: 'Lista de permisos obtenida exitosamente',
         type: [PermissionEntity],
     })
-    @ApiResponse({ status: 403, description: 'Sin permisos para leer permisos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findAll() {
         return this.permissionsService.findAll();
     }
 
     @Get('paginated')
-    @RequirePermissions('permissions.read')
     @Paginated()
     @ApiOperation({ summary: 'Obtener todos los permisos con paginación' })
     @ApiResponse({
@@ -58,14 +47,12 @@ export class PermissionsController {
         description: 'Lista paginada de permisos obtenida exitosamente',
         type: PaginationResponseDto,
     })
-    @ApiResponse({ status: 403, description: 'Sin permisos para leer permisos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findAllPaginated(@Query() query: PaginationQueryDto) {
         return this.permissionsService.findAllPaginated(query);
     }
 
     @Get(':id')
-    @RequirePermissions('permissions.read')
     @ApiOperation({ summary: 'Obtener un permiso por ID' })
     @ApiParam({ name: 'id', description: 'ID del permiso' })
     @ApiResponse({
@@ -74,15 +61,12 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 404, description: 'Permiso no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
-    @ApiResponse({ status: 403, description: 'Sin permisos para leer permisos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     findOne(@Param('id') id: string) {
         return this.permissionsService.findOne(id);
     }
 
     @Patch(':id')
-    @RequirePermissions('permissions.update')
     @ApiOperation({ summary: 'Actualizar un permiso' })
     @ApiParam({ name: 'id', description: 'ID del permiso' })
     @ApiResponse({
@@ -91,17 +75,13 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 404, description: 'Permiso no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
-    @ApiResponse({ status: 403, description: 'Sin permisos para actualizar permisos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     @ApiResponse({ status: 409, description: 'El nombre del permiso ya existe' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
     update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
         return this.permissionsService.update(id, updatePermissionDto);
     }
 
     @Delete(':id')
-    @RequirePermissions('permissions.delete')
     @ApiOperation({ summary: 'Eliminar un permiso' })
     @ApiParam({ name: 'id', description: 'ID del permiso' })
     @ApiResponse({
@@ -110,9 +90,7 @@ export class PermissionsController {
         type: PermissionEntity,
     })
     @ApiResponse({ status: 404, description: 'Permiso no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
-    @ApiResponse({ status: 403, description: 'Sin permisos para eliminar permisos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @ApiResponse({ status: 401, description: 'No autenticado' })
     remove(@Param('id') id: string) {
         return this.permissionsService.remove(id);
     }

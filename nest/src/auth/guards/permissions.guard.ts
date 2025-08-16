@@ -1,4 +1,4 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 @Injectable()
@@ -10,11 +10,39 @@ export class PermissionsGuard implements CanActivate {
             'permissions',
             context.getHandler()
         );
-        if (!requiredPermissions) return true;
 
-        const { user } = context.switchToHttp().getRequest();
-        if (!user || !user.permissions) return false;
+        // Si no se requieren permisos específicos, permitir acceso
+        if (!requiredPermissions || requiredPermissions.length === 0) {
+            return true;
+        }
 
-        return requiredPermissions.every(p => user.permissions.includes(p));
+        const request = context.switchToHttp().getRequest();
+        const { user } = request;
+
+        // Verificar que el usuario esté autenticado
+        if (!user) {
+            throw new ForbiddenException('Usuario no autenticado');
+        }
+
+        // Verificar que el usuario tenga permisos
+        if (!user.permissions || !Array.isArray(user.permissions)) {
+            throw new ForbiddenException('Usuario sin permisos asignados');
+        }
+
+        // Verificar que el usuario tenga todos los permisos requeridos
+        const hasAllPermissions = requiredPermissions.every(permission =>
+            user.permissions.includes(permission)
+        );
+
+        if (!hasAllPermissions) {
+            const missingPermissions = requiredPermissions.filter(permission =>
+                !user.permissions.includes(permission)
+            );
+            throw new ForbiddenException(
+                `Permisos requeridos: ${missingPermissions.join(', ')}`
+            );
+        }
+
+        return true;
     }
 } 
