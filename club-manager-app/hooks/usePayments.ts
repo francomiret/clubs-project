@@ -55,11 +55,10 @@ export function usePayments() {
                 throw new Error('No hay token de autenticación');
             }
 
-            // Si no se proporciona clubId, usar el club del usuario autenticado
-            const dataToSend = {
-                ...paymentData,
-                clubId: paymentData.clubId || user?.clubId,
-            };
+            // Asegurar que se tenga un clubId válido
+            if (!paymentData.clubId) {
+                throw new Error('Club ID es requerido');
+            }
 
             const response = await fetch('/api/payments', {
                 method: 'POST',
@@ -67,7 +66,7 @@ export function usePayments() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(dataToSend),
+                body: JSON.stringify(paymentData),
             });
 
             if (!response.ok) {

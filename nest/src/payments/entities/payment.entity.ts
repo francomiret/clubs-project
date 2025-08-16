@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { PaymentType } from '@prisma/client';
 
 export class PaymentEntity {
     @ApiProperty({
@@ -13,9 +14,22 @@ export class PaymentEntity {
     })
     amount: number;
 
+    @ApiProperty({
+        description: 'Tipo de transacción',
+        enum: PaymentType,
+        example: PaymentType.INCOME,
+    })
+    type: PaymentType;
+
+    @ApiPropertyOptional({
+        description: 'Categoría del pago',
+        example: 'Cuota mensual',
+    })
+    category?: string;
+
     @ApiPropertyOptional({
         description: 'Descripción del pago',
-        example: 'Cuota mensual',
+        example: 'Cuota mensual de enero',
     })
     description?: string;
 
@@ -42,4 +56,22 @@ export class PaymentEntity {
         example: 'c02c6a05-eb28-48cf-96a4-7327832c0338',
     })
     clubId: string;
+
+    @ApiProperty({
+        description: 'Estado activo del pago',
+        example: true,
+    })
+    isActive: boolean;
+
+    @ApiProperty({
+        description: 'Fecha de creación',
+        example: '2025-08-01T02:51:32.533Z',
+    })
+    createdAt: Date;
+
+    @ApiProperty({
+        description: 'Fecha de última actualización',
+        example: '2025-08-01T02:51:32.533Z',
+    })
+    updatedAt: Date;
 } 

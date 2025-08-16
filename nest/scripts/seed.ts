@@ -1,173 +1,279 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// Configuración externalizada
+const SEED_CONFIG = {
+  CLUB: {
+    name: 'Club Deportivo Ejemplo',
+    alias: 'CDE',
+    location: 'Ciudad Ejemplo',
+    foundationDate: new Date('2020-01-01'),
+  },
+  ROLES: [
+    { name: 'ADMIN' },
+    { name: 'MANAGER' },
+    { name: 'MEMBER' },
+  ],
+  PERMISSIONS: [
+    { name: 'users:read', description: 'Leer usuarios' },
+    { name: 'users:write', description: 'Crear/editar usuarios' },
+    { name: 'users:delete', description: 'Eliminar usuarios' },
+    { name: 'members:read', description: 'Leer miembros' },
+    { name: 'members:write', description: 'Crear/editar miembros' },
+    { name: 'members:delete', description: 'Eliminar miembros' },
+    { name: 'sponsors:read', description: 'Leer patrocinadores' },
+    { name: 'sponsors:write', description: 'Crear/editar patrocinadores' },
+    { name: 'sponsors:delete', description: 'Eliminar patrocinadores' },
+    { name: 'payments:read', description: 'Leer pagos' },
+    { name: 'payments:write', description: 'Crear/editar pagos' },
+    { name: 'payments:delete', description: 'Eliminar pagos' },
+    { name: 'properties:read', description: 'Leer propiedades' },
+    { name: 'properties:write', description: 'Crear/editar propiedades' },
+    { name: 'properties:delete', description: 'Eliminar propiedades' },
+    { name: 'activities:read', description: 'Leer actividades' },
+    { name: 'activities:write', description: 'Crear/editar actividades' },
+    { name: 'activities:delete', description: 'Eliminar actividades' },
+  ],
+  USERS: [
+    {
+      email: 'admin@club.com',
+      password: 'admin123',
+      name: 'Administrador',
+      role: 'ADMIN',
+    },
+    {
+      email: 'manager@club.com',
+      password: 'manager123',
+      name: 'Gerente',
+      role: 'MANAGER',
+    },
+    {
+      email: 'member@club.com',
+      password: 'member123',
+      name: 'Miembro',
+      role: 'MEMBER',
+    },
+  ],
+  MEMBERS: [
+    { name: 'Juan Pérez', email: 'juan@example.com' },
+    { name: 'María García', email: 'maria@example.com' },
+    { name: 'Carlos López', email: 'carlos@example.com' },
+  ],
+  SPONSORS: [
+    { name: 'Empresa A', email: 'contacto@empresaa.com' },
+    { name: 'Empresa B', email: 'info@empresab.com' },
+  ],
+} as const;
+
 async function main() {
-    console.log('🌱 Starting database seed...');
+  try {
+    console.log('🌱 Iniciando proceso de seed...');
 
-    // Crear permisos CRUD para todas las entidades
-    const permissions = [
-        // Permisos para Users
-        { name: 'users.read', description: 'Leer usuarios' },
-        { name: 'users.create', description: 'Crear usuarios' },
-        { name: 'users.update', description: 'Actualizar usuarios' },
-        { name: 'users.delete', description: 'Eliminar usuarios' },
+    // Crear club
+    console.log('📋 Creando club...');
+    const club = await prisma.club.upsert({
+      where: { id: 'default-club' },
+      update: {},
+      create: {
+        id: 'default-club',
+        name: SEED_CONFIG.CLUB.name,
+      },
+    });
+    console.log(`✅ Club creado: ${club.name}`);
 
-        // Permisos para Members
-        { name: 'members.read', description: 'Leer miembros' },
-        { name: 'members.create', description: 'Crear miembros' },
-        { name: 'members.update', description: 'Actualizar miembros' },
-        { name: 'members.delete', description: 'Eliminar miembros' },
-
-        // Permisos para Sponsors
-        { name: 'sponsors.read', description: 'Leer sponsors' },
-        { name: 'sponsors.create', description: 'Crear sponsors' },
-        { name: 'sponsors.update', description: 'Actualizar sponsors' },
-        { name: 'sponsors.delete', description: 'Eliminar sponsors' },
-
-        // Permisos para Payments
-        { name: 'payments.read', description: 'Leer pagos' },
-        { name: 'payments.create', description: 'Crear pagos' },
-        { name: 'payments.update', description: 'Actualizar pagos' },
-        { name: 'payments.delete', description: 'Eliminar pagos' },
-
-        // Permisos para Roles
-        { name: 'roles.read', description: 'Leer roles' },
-        { name: 'roles.create', description: 'Crear roles' },
-        { name: 'roles.update', description: 'Actualizar roles' },
-        { name: 'roles.delete', description: 'Eliminar roles' },
-
-        // Permisos para Permissions
-        { name: 'permissions.read', description: 'Leer permisos' },
-        { name: 'permissions.create', description: 'Crear permisos' },
-        { name: 'permissions.update', description: 'Actualizar permisos' },
-        { name: 'permissions.delete', description: 'Eliminar permisos' },
-
-        // Permisos para Club
-        { name: 'club.read', description: 'Leer información del club' },
-        { name: 'club.update', description: 'Actualizar información del club' },
-        { name: 'clubs.read', description: 'Leer clubs' },
-
-        // Permisos para Properties
-        { name: 'properties.read', description: 'Leer propiedades' },
-        { name: 'properties.create', description: 'Crear propiedades' },
-        { name: 'properties.update', description: 'Actualizar propiedades' },
-        { name: 'properties.delete', description: 'Eliminar propiedades' },
-
-        // Permisos para Activities
-        { name: 'activities.read', description: 'Leer actividades' },
-        { name: 'activities.create', description: 'Crear actividades' },
-        { name: 'activities.update', description: 'Actualizar actividades' },
-        { name: 'activities.delete', description: 'Eliminar actividades' },
-    ];
-
-    console.log('📝 Creating permissions...');
-    const createdPermissions: any[] = [];
-    for (const permission of permissions) {
-        const created = await prisma.permission.upsert({
-            where: { name: permission.name },
-            update: {},
-            create: permission,
+    // Crear roles
+    console.log('👥 Creando roles...');
+    const roles = await Promise.all(
+      SEED_CONFIG.ROLES.map(async (roleData) => {
+        return prisma.role.upsert({
+          where: { name_clubId: { name: roleData.name, clubId: club.id } },
+          update: {},
+          create: {
+            name: roleData.name,
+            clubId: club.id,
+          },
         });
-        createdPermissions.push(created);
-    }
-    console.log(`✅ Created ${createdPermissions.length} permissions`);
+      })
+    );
+    console.log(`✅ ${roles.length} roles creados`);
 
-    // Crear club por defecto
-    console.log('🏢 Creating default club...');
-    const defaultClub = await prisma.club.upsert({
-        where: { id: 'default-club' },
-        update: {},
-        create: {
-            id: 'default-club',
-            name: 'Club Deportivo',
-        },
-    });
-    console.log(`✅ Created default club: ${defaultClub.name}`);
+    // Crear permisos
+    console.log('🔐 Creando permisos...');
+    const permissions = await Promise.all(
+      SEED_CONFIG.PERMISSIONS.map(async (permissionData) => {
+        return prisma.permission.upsert({
+          where: { name: permissionData.name },
+          update: { description: permissionData.description },
+          create: permissionData,
+        });
+      })
+    );
+    console.log(`✅ ${permissions.length} permisos creados`);
 
-    // Crear rol Admin con todos los permisos
-    console.log('👑 Creating Admin role...');
-    const adminRole = await prisma.role.upsert({
-        where: { id: 'admin-role' },
-        update: {},
-        create: {
-            id: 'admin-role',
-            name: 'ADMIN',
-            clubId: defaultClub.id,
-        },
-    });
-    console.log(`✅ Created admin role: ${adminRole.name}`);
+    // Asignar permisos a roles
+    console.log('🔗 Asignando permisos a roles...');
+    const adminRole = roles.find(r => r.name === 'ADMIN');
+    const managerRole = roles.find(r => r.name === 'MANAGER');
+    const memberRole = roles.find(r => r.name === 'MEMBER');
 
-    // Asignar todos los permisos al rol Admin
-    console.log('🔗 Assigning all permissions to Admin role...');
-    for (const permission of createdPermissions) {
-        await prisma.rolePermission.upsert({
+    if (adminRole) {
+      // Admin tiene todos los permisos
+      await Promise.all(
+        permissions.map(permission =>
+          prisma.rolePermission.upsert({
             where: {
-                roleId_permissionId: {
-                    roleId: adminRole.id,
-                    permissionId: permission.id,
-                },
+              roleId_permissionId: {
+                roleId: adminRole.id,
+                permissionId: permission.id,
+              },
             },
             update: {},
             create: {
-                roleId: adminRole.id,
-                permissionId: permission.id,
+              roleId: adminRole.id,
+              permissionId: permission.id,
             },
-        });
+          })
+        )
+      );
     }
-    console.log(`✅ Assigned ${createdPermissions.length} permissions to Admin role`);
 
-    // Crear usuario admin por defecto
-    console.log('👤 Creating default admin user...');
-    const hashedPassword = await bcrypt.hash('admin123', 10);
-    const adminUser = await prisma.user.upsert({
-        where: { email: 'admin@club.com' },
-        update: {},
-        create: {
-            email: 'admin@club.com',
-            password: hashedPassword,
-            name: 'Administrador',
-        },
-    });
-    console.log(`✅ Created admin user: ${adminUser.email}`);
-
-    // Asignar rol Admin al usuario admin
-    console.log('🔗 Assigning Admin role to admin user...');
-    await prisma.userClub.upsert({
-        where: {
-            userId_clubId: {
-                userId: adminUser.id,
-                clubId: defaultClub.id,
+    if (managerRole) {
+      // Manager tiene permisos de lectura y escritura (no eliminación)
+      const managerPermissions = permissions.filter(p => !p.name.includes(':delete'));
+      await Promise.all(
+        managerPermissions.map(permission =>
+          prisma.rolePermission.upsert({
+            where: {
+              roleId_permissionId: {
+                roleId: managerRole.id,
+                permissionId: permission.id,
+              },
             },
-        },
-        update: {},
-        create: {
-            userId: adminUser.id,
-            clubId: defaultClub.id,
-            roleId: adminRole.id,
-        },
-    });
-    console.log(`✅ Assigned Admin role to admin user`);
+            update: {},
+            create: {
+              roleId: managerRole.id,
+              permissionId: permission.id,
+            },
+          })
+        )
+      );
+    }
 
-    console.log('🎉 Database seed completed successfully!');
-    console.log('');
-    console.log('📋 Summary:');
-    console.log(`- ${createdPermissions.length} permissions created`);
-    console.log(`- 1 default club created`);
-    console.log(`- 1 admin role created with all permissions`);
-    console.log(`- 1 admin user created (admin@club.com / admin123)`);
-    console.log('');
-    console.log('🔑 Default login credentials:');
-    console.log('Email: admin@club.com');
-    console.log('Password: admin123');
+    if (memberRole) {
+      // Member solo tiene permisos de lectura
+      const memberPermissions = permissions.filter(p => p.name.includes(':read'));
+      await Promise.all(
+        memberPermissions.map(permission =>
+          prisma.rolePermission.upsert({
+            where: {
+              roleId_permissionId: {
+                roleId: memberRole.id,
+                permissionId: permission.id,
+              },
+            },
+            update: {},
+            create: {
+              roleId: memberRole.id,
+              permissionId: permission.id,
+            },
+          })
+        )
+      );
+    }
+    console.log('✅ Permisos asignados a roles');
+
+    // Crear usuarios
+    console.log('👤 Creando usuarios...');
+    const users = await Promise.all(
+      SEED_CONFIG.USERS.map(async (userData) => {
+        const role = roles.find(r => r.name === userData.role);
+        if (!role) {
+          throw new Error(`Rol ${userData.role} no encontrado`);
+        }
+
+        const user = await prisma.user.upsert({
+          where: { email: userData.email },
+          update: {},
+          create: {
+            email: userData.email,
+            password: userData.password, // En producción esto debería estar hasheado
+            name: userData.name,
+          },
+        });
+
+        // Asignar rol al usuario
+        await prisma.userClub.upsert({
+          where: {
+            userId_clubId: {
+              userId: user.id,
+              clubId: club.id,
+            },
+          },
+          update: { roleId: role.id },
+          create: {
+            userId: user.id,
+            clubId: club.id,
+            roleId: role.id,
+          },
+        });
+
+        return user;
+      })
+    );
+    console.log(`✅ ${users.length} usuarios creados`);
+
+    // Crear miembros
+    console.log('🏃 Creando miembros...');
+    const members = await Promise.all(
+      SEED_CONFIG.MEMBERS.map(async (memberData) => {
+        return prisma.member.upsert({
+          where: { email: memberData.email },
+          update: {},
+          create: {
+            ...memberData,
+            clubId: club.id,
+          },
+        });
+      })
+    );
+    console.log(`✅ ${members.length} miembros creados`);
+
+    // Crear patrocinadores
+    console.log('💼 Creando patrocinadores...');
+    const sponsors = await Promise.all(
+      SEED_CONFIG.SPONSORS.map(async (sponsorData) => {
+        return prisma.sponsor.upsert({
+          where: { email: sponsorData.email },
+          update: {},
+          create: {
+            ...sponsorData,
+            clubId: club.id,
+          },
+        });
+      })
+    );
+    console.log(`✅ ${sponsors.length} patrocinadores creados`);
+
+    console.log('🎉 Seed completado exitosamente!');
+    console.log(`📊 Resumen:`);
+    console.log(`   - Club: ${club.name}`);
+    console.log(`   - Roles: ${roles.length}`);
+    console.log(`   - Permisos: ${permissions.length}`);
+    console.log(`   - Usuarios: ${users.length}`);
+    console.log(`   - Miembros: ${members.length}`);
+    console.log(`   - Patrocinadores: ${sponsors.length}`);
+
+  } catch (error) {
+    console.error('❌ Error durante el seed:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
 main()
-    .catch((e) => {
-        console.error('❌ Error during seed:', e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    }); 
+  .catch((e) => {
+    console.error('❌ Error fatal:', e);
+    process.exit(1);
+  }); 

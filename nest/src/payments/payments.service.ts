@@ -1,74 +1,85 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { Payment } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto';
-import { IPaymentsRepository, PAYMENTS_REPOSITORY } from './payments.repository';
-import { PaginationQueryDto, PaginationService } from '../common';
+import { PaymentsRepository } from './payments.repository';
+import { PaymentEntity } from './entities/payment.entity';
+import { PaymentType } from '@prisma/client';
+import { PaymentFilterDto, PaymentSummaryDto, PaymentStatsDto } from './dto/payment-dashboard.dto';
 
 @Injectable()
 export class PaymentsService {
-    constructor(
-        @Inject(PAYMENTS_REPOSITORY)
-        private readonly paymentsRepository: IPaymentsRepository,
-        private readonly paginationService: PaginationService,
-    ) { }
+    constructor(private readonly paymentsRepository: PaymentsRepository) { }
 
-    async create(data: CreatePaymentDto): Promise<Payment> {
-        return this.paymentsRepository.create(data);
+    async create(createPaymentDto: CreatePaymentDto): Promise<PaymentEntity> {
+        return this.paymentsRepository.create(createPaymentDto);
     }
 
-    async findAll(): Promise<Payment[]> {
-        return this.paymentsRepository.findAll();
+    async findAll(filters: PaymentFilterDto = {}): Promise<PaymentEntity[]> {
+        return this.paymentsRepository.findAll(filters);
     }
 
-    async findAllPaginated(query: PaginationQueryDto) {
-        const { data, total } = await this.paymentsRepository.findAllPaginated(query);
-        const { page, limit } = this.paginationService.parsePagination(query);
-
-        return this.paginationService.createPaginationResponse(data, total, page, limit);
+    async findOne(id: string): Promise<PaymentEntity> {
+        try {
+            return await this.paymentsRepository.findOne(id);
+        } catch (error) {
+            throw new NotFoundException(`Pago con ID ${id} no encontrado`);
+        }
     }
 
-    async findOne(id: string): Promise<Payment | null> {
-        return this.paymentsRepository.findOne(id);
+    async update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<PaymentEntity> {
+        try {
+            return await this.paymentsRepository.update(id, updatePaymentDto);
+        } catch (error) {
+            throw new NotFoundException(`Pago con ID ${id} no encontrado`);
+        }
     }
 
-    async update(id: string, data: UpdatePaymentDto): Promise<Payment> {
-        return this.paymentsRepository.update(id, data);
+    async remove(id: string): Promise<PaymentEntity> {
+        try {
+            return await this.paymentsRepository.remove(id);
+        } catch (error) {
+            throw new NotFoundException(`Pago con ID ${id} no encontrado`);
+        }
     }
 
-    async remove(id: string): Promise<Payment> {
-        return this.paymentsRepository.remove(id);
+    async getDashboardSummary(clubId: string): Promise<PaymentSummaryDto> {
+        return this.paymentsRepository.getDashboardSummary(clubId);
     }
 
-    async findByClubId(clubId: string): Promise<Payment[]> {
-        return this.paymentsRepository.findByClubId(clubId);
+    async getPaymentsByMember(clubId: string, memberId?: string): Promise<PaymentEntity[]> {
+        return this.paymentsRepository.getPaymentsByMember(clubId, memberId);
     }
 
-    async findByClubIdPaginated(clubId: string, query: PaginationQueryDto) {
-        const { data, total } = await this.paymentsRepository.findByClubIdPaginated(clubId, query);
-        const { page, limit } = this.paginationService.parsePagination(query);
-
-        return this.paginationService.createPaginationResponse(data, total, page, limit);
+    async getPaymentsBySponsor(clubId: string, sponsorId?: string): Promise<PaymentEntity[]> {
+        return this.paymentsRepository.getPaymentsBySponsor(clubId, sponsorId);
     }
 
-    async findByMemberId(memberId: string): Promise<Payment[]> {
-        return this.paymentsRepository.findByMemberId(memberId);
+    async getCategoryStats(clubId: string, type: PaymentType): Promise<PaymentStatsDto[]> {
+        return this.paymentsRepository.getCategoryStats(clubId, type);
     }
 
-    async findByMemberIdPaginated(memberId: string, query: PaginationQueryDto) {
-        const { data, total } = await this.paymentsRepository.findByMemberIdPaginated(memberId, query);
-        const { page, limit } = this.paginationService.parsePagination(query);
-
-        return this.paginationService.createPaginationResponse(data, total, page, limit);
+    async getRecentTransactions(clubId: string, limit: number = 10): Promise<PaymentEntity[]> {
+        return this.paymentsRepository.findAll({ clubId, limit });
     }
 
-    async findBySponsorId(sponsorId: string): Promise<Payment[]> {
-        return this.paymentsRepository.findBySponsorId(sponsorId);
-    }
+    async getIncomeVsExpenses(clubId: string, startDate: string, endDate: string): Promise<{
+        income: number;
+        expenses: number;
+        balance: number;
+    }> {
+        const filters: PaymentFilterDto = { clubId, startDate, endDate };
 
-    async findBySponsorIdPaginated(sponsorId: string, query: PaginationQueryDto) {
-        const { data, total } = await this.paymentsRepository.findBySponsorIdPaginated(sponsorId, query);
-        const { page, limit } = this.paginationService.parsePagination(query);
+        const [incomePayments, expensePayments] = await Promise.all([
+            this.paymentsRepository.findAll({ ...filters, type: PaymentType.INCOME }),
+            this.paymentsRepository.findAll({ ...filters, type: PaymentType.EXPENSE }),
+        ]);
 
-        return this.paginationService.createPaginationResponse(data, total, page, limit);
+        const income = incomePayments.reduce((sum, payment) => sum + payment.amount, 0);
+        const expenses = expensePayments.reduce((sum, payment) => sum + payment.amount, 0);
+
+        return {
+            income,
+            expenses,
+            balance: income - expenses,
+        };
     }
 } 

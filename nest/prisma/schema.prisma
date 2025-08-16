@@ -77,9 +77,10 @@ model Member {
   name      String
   email     String    @unique
   clubId    String
-  club      Club      @relation(fields: [clubId], references: [id])
+  club      Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   payments  Payment[]
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Sponsor {
@@ -87,54 +88,88 @@ model Sponsor {
   name      String
   email     String    @unique
   clubId    String
-  club      Club      @relation(fields: [clubId], references: [id])
+  club      Club      @relation(fields: [clubId], references: [id], onDelete: Cascade)
   payments  Payment[]
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Payment {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   amount      Float
+  type        PaymentType @default(INCOME)
+  category    String?
   description String?
   date        DateTime
   memberId    String?
   sponsorId   String?
   clubId      String
-  club        Club     @relation(fields: [clubId], references: [id])
-  member      Member?  @relation(fields: [memberId], references: [id])
-  sponsor     Sponsor? @relation(fields: [sponsorId], references: [id])
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  club    Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  member  Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  sponsor Sponsor? @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+}
+
+enum PaymentType {
+  INCOME
+  EXPENSE
+}
+
+enum PropertyType {
+  SPORTS_FIELD
+  GYM
+  POOL
+  TENNIS_COURT
+  SOCCER_FIELD
+  BASKETBALL_COURT
+  TRACK
+  OTHER
+}
+
+enum ActivityType {
+  TRAINING
+  COMPETITION
+  TOURNAMENT
+  WORKSHOP
+  CLASS
+  EVENT
+  MEETING
+  OTHER
 }
 
 model Property {
-  id          String   @id @default(uuid())
+  id          String       @id @default(uuid())
   name        String
   description String?
   address     String
-  type        String
+  type        PropertyType
   capacity    Int?
   amenities   String[]
   clubId      String
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  club Club @relation(fields: [clubId], references: [id])
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
 }
 
 model Activity {
-  id                  String   @id @default(uuid())
+  id                  String       @id @default(uuid())
   name                String
   description         String?
-  type                String
+  type                ActivityType
   startDate           DateTime
   endDate             DateTime
   location            String
   maxParticipants     Int?
-  currentParticipants Int      @default(0)
+  currentParticipants Int          @default(0)
   clubId              String
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
 
-  club Club @relation(fields: [clubId], references: [id])
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
 }

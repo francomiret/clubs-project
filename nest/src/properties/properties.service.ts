@@ -1,21 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePropertyDto, UpdatePropertyDto } from './dto';
 import { PropertiesRepository } from './properties.repository';
-import { Property } from './entities/property.entity';
+import { PropertyEntity } from './entities/property.entity';
 
 @Injectable()
 export class PropertiesService {
     constructor(private readonly propertiesRepository: PropertiesRepository) { }
 
-    async create(createPropertyDto: CreatePropertyDto): Promise<Property> {
+    async create(createPropertyDto: CreatePropertyDto): Promise<PropertyEntity> {
         return this.propertiesRepository.create(createPropertyDto);
     }
 
-    async findAll(clubId?: string): Promise<Property[]> {
+    async findAll(clubId?: string): Promise<PropertyEntity[]> {
         return this.propertiesRepository.findAll(clubId);
     }
 
-    async findOne(id: string): Promise<Property> {
+    async findOne(id: string): Promise<PropertyEntity> {
         try {
             return await this.propertiesRepository.findOne(id);
         } catch (error) {
@@ -23,7 +23,7 @@ export class PropertiesService {
         }
     }
 
-    async update(id: string, updatePropertyDto: UpdatePropertyDto): Promise<Property> {
+    async update(id: string, updatePropertyDto: UpdatePropertyDto): Promise<PropertyEntity> {
         try {
             return await this.propertiesRepository.update(id, updatePropertyDto);
         } catch (error) {
@@ -31,7 +31,7 @@ export class PropertiesService {
         }
     }
 
-    async remove(id: string): Promise<Property> {
+    async remove(id: string): Promise<PropertyEntity> {
         try {
             return await this.propertiesRepository.remove(id);
         } catch (error) {

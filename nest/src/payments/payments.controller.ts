@@ -1,176 +1,99 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    Query,
+    UseGuards,
+} from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto, UpdatePaymentDto } from './dto';
-import { PaymentEntity } from './entities/payment.entity';
-import { PaginationQueryDto, PaginationResponseDto, Paginated } from '../common';
-import { AuthorizationGuard, RequirePermission } from '../auth/guards/authorization.guard';
-import { CurrentUserRequest } from '../auth/decorators/current-user-request.decorator';
+import { PaymentFilterDto } from './dto/payment-dashboard.dto';
+import { PaymentType } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UserEntity } from '../users/entities/user.entity';
 
-@ApiTags('payments')
-@UseGuards(AuthorizationGuard)
-@ApiBearerAuth()
 @Controller('payments')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Post()
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Crear un nuevo pago' })
-    @ApiResponse({
-        status: 201,
-        description: 'Pago creado exitosamente',
-        type: PaymentEntity,
-    })
-    @ApiResponse({ status: 400, description: 'Datos inválidos' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
-    create(@Body() createPaymentDto: CreatePaymentDto) {
+    @Roles('ADMIN', 'MANAGER')
+    create(@Body() createPaymentDto: CreatePaymentDto, @CurrentUser() user: UserEntity) {
         return this.paymentsService.create(createPaymentDto);
     }
 
     @Get()
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Obtener todos los pagos' })
-    @ApiResponse({
-        status: 200,
-        description: 'Lista de pagos obtenida exitosamente',
-        type: [PaymentEntity],
-    })
-    findAll() {
-        return this.paymentsService.findAll();
+    findAll(@Query() filters: PaymentFilterDto) {
+        return this.paymentsService.findAll(filters);
     }
 
-    @Get('paginated')
-    @Paginated()
-    @ApiOperation({ summary: 'Obtener todos los pagos con paginación' })
-    @ApiResponse({
-        status: 200,
-        description: 'Lista paginada de pagos obtenida exitosamente',
-        type: PaginationResponseDto,
-    })
-    findAllPaginated(@Query() query: PaginationQueryDto) {
-        return this.paymentsService.findAllPaginated(query);
+    @Get('dashboard/:clubId')
+    getDashboardSummary(@Param('clubId') clubId: string) {
+        return this.paymentsService.getDashboardSummary(clubId);
     }
 
-    @Get('club/:clubId')
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Obtener pagos por club' })
-    @ApiParam({ name: 'clubId', description: 'ID del club' })
-    @ApiResponse({
-        status: 200,
-        description: 'Pagos del club obtenidos exitosamente',
-        type: [PaymentEntity],
-    })
-    findByClubId(@Param('clubId') clubId: string) {
-        return this.paymentsService.findByClubId(clubId);
+    @Get('members/:clubId')
+    getPaymentsByMember(
+        @Param('clubId') clubId: string,
+        @Query('memberId') memberId?: string,
+    ) {
+        return this.paymentsService.getPaymentsByMember(clubId, memberId);
     }
 
-    @Get('club/:clubId/paginated')
-    @Paginated()
-    @ApiOperation({ summary: 'Obtener pagos por club con paginación' })
-    @ApiParam({ name: 'clubId', description: 'ID del club' })
-    @ApiResponse({
-        status: 200,
-        description: 'Lista paginada de pagos del club obtenida exitosamente',
-        type: PaginationResponseDto,
-    })
-    findByClubIdPaginated(@Param('clubId') clubId: string, @Query() query: PaginationQueryDto) {
-        return this.paymentsService.findByClubIdPaginated(clubId, query);
+    @Get('sponsors/:clubId')
+    getPaymentsBySponsor(
+        @Param('clubId') clubId: string,
+        @Query('sponsorId') sponsorId?: string,
+    ) {
+        return this.paymentsService.getPaymentsBySponsor(clubId, sponsorId);
     }
 
-    @Get('member/:memberId')
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Obtener pagos por miembro' })
-    @ApiParam({ name: 'memberId', description: 'ID del miembro' })
-    @ApiResponse({
-        status: 200,
-        description: 'Pagos del miembro obtenidos exitosamente',
-        type: [PaymentEntity],
-    })
-    findByMemberId(@Param('memberId') memberId: string) {
-        return this.paymentsService.findByMemberId(memberId);
+    @Get('stats/:clubId/:type')
+    getCategoryStats(
+        @Param('clubId') clubId: string,
+        @Param('type') type: PaymentType,
+    ) {
+        return this.paymentsService.getCategoryStats(clubId, type);
     }
 
-    @Get('member/:memberId/paginated')
-    @Paginated()
-    @ApiOperation({ summary: 'Obtener pagos por miembro con paginación' })
-    @ApiParam({ name: 'memberId', description: 'ID del miembro' })
-    @ApiResponse({
-        status: 200,
-        description: 'Lista paginada de pagos del miembro obtenida exitosamente',
-        type: PaginationResponseDto,
-    })
-    findByMemberIdPaginated(@Param('memberId') memberId: string, @Query() query: PaginationQueryDto) {
-        return this.paymentsService.findByMemberIdPaginated(memberId, query);
+    @Get('recent/:clubId')
+    getRecentTransactions(
+        @Param('clubId') clubId: string,
+        @Query('limit') limit?: number,
+    ) {
+        return this.paymentsService.getRecentTransactions(clubId, limit);
     }
 
-    @Get('sponsor/:sponsorId')
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Obtener pagos por patrocinador' })
-    @ApiParam({ name: 'sponsorId', description: 'ID del patrocinador' })
-    @ApiResponse({
-        status: 200,
-        description: 'Pagos del patrocinador obtenidos exitosamente',
-        type: [PaymentEntity],
-    })
-    findBySponsorId(@Param('sponsorId') sponsorId: string) {
-        return this.paymentsService.findBySponsorId(sponsorId);
-    }
-
-    @Get('sponsor/:sponsorId/paginated')
-    @Paginated()
-    @ApiOperation({ summary: 'Obtener pagos por patrocinador con paginación' })
-    @ApiParam({ name: 'sponsorId', description: 'ID del patrocinador' })
-    @ApiResponse({
-        status: 200,
-        description: 'Lista paginada de pagos del patrocinador obtenida exitosamente',
-        type: PaginationResponseDto,
-    })
-    findBySponsorIdPaginated(@Param('sponsorId') sponsorId: string, @Query() query: PaginationQueryDto) {
-        return this.paymentsService.findBySponsorIdPaginated(sponsorId, query);
+    @Get('income-vs-expenses/:clubId')
+    getIncomeVsExpenses(
+        @Param('clubId') clubId: string,
+        @Query('startDate') startDate: string,
+        @Query('endDate') endDate: string,
+    ) {
+        return this.paymentsService.getIncomeVsExpenses(clubId, startDate, endDate);
     }
 
     @Get(':id')
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Obtener un pago por ID' })
-    @ApiParam({ name: 'id', description: 'ID del pago' })
-    @ApiResponse({
-        status: 200,
-        description: 'Pago encontrado exitosamente',
-        type: PaymentEntity,
-    })
-    @ApiResponse({ status: 404, description: 'Pago no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
     findOne(@Param('id') id: string) {
         return this.paymentsService.findOne(id);
     }
 
     @Patch(':id')
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Actualizar un pago' })
-    @ApiParam({ name: 'id', description: 'ID del pago' })
-    @ApiResponse({
-        status: 200,
-        description: 'Pago actualizado exitosamente',
-        type: PaymentEntity,
-    })
-    @ApiResponse({ status: 404, description: 'Pago no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @Roles('ADMIN', 'MANAGER')
     update(@Param('id') id: string, @Body() updatePaymentDto: UpdatePaymentDto) {
         return this.paymentsService.update(id, updatePaymentDto);
     }
 
     @Delete(':id')
-    @RequirePermission('payments', 'read')
-    @ApiOperation({ summary: 'Eliminar un pago' })
-    @ApiParam({ name: 'id', description: 'ID del pago' })
-    @ApiResponse({
-        status: 200,
-        description: 'Pago eliminado exitosamente',
-        type: PaymentEntity,
-    })
-    @ApiResponse({ status: 404, description: 'Pago no encontrado' })
-    @ApiResponse({ status: 403, description: 'No autorizado' })
+    @Roles('ADMIN')
     remove(@Param('id') id: string) {
         return this.paymentsService.remove(id);
     }

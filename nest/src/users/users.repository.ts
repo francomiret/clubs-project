@@ -16,6 +16,7 @@ export interface IUsersRepository {
     findByClubId(clubId: string): Promise<User[]>;
     findAllPaginated(query: PaginationQueryDto): Promise<{ data: User[]; total: number }>;
     findByClubIdPaginated(clubId: string, query: PaginationQueryDto): Promise<{ data: User[]; total: number }>;
+    findOneWithRoles(id: string): Promise<any>;
 }
 
 @Injectable()
@@ -142,6 +143,27 @@ export class UsersRepository implements IUsersRepository {
         ]);
 
         return { data, total };
+    }
+
+    async findOneWithRoles(id: string): Promise<any> {
+        return this.prisma.user.findUnique({
+            where: { id },
+            include: {
+                clubs: {
+                    include: {
+                        role: {
+                            include: {
+                                permissions: {
+                                    include: {
+                                        permission: true,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
     }
 
     private parsePagination(query: PaginationQueryDto) {

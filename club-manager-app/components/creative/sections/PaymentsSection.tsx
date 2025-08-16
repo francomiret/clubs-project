@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -82,8 +82,10 @@ import { IconRenderer } from "../IconRenderer";
 import { usePayments } from "@/hooks/usePayments";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function PaymentsSection() {
+  const { user } = useAuth();
   const {
     payments,
     loading,
@@ -104,12 +106,22 @@ export function PaymentsSection() {
   // Form states
   const [formData, setFormData] = useState<CreatePaymentData>({
     amount: 0,
+    type: "INCOME",
+    category: "",
     description: "",
     date: new Date(),
-    memberId: "none",
-    sponsorId: "none",
-    clubId: "",
+    memberId: undefined,
+    sponsorId: undefined,
+    clubId: user?.clubId || "",
+    isActive: true,
   });
+
+  // Actualizar clubId cuando el usuario cambie
+  useEffect(() => {
+    if (user?.clubId) {
+      setFormData((prev) => ({ ...prev, clubId: user.clubId! }));
+    }
+  }, [user?.clubId]);
 
   // Filter payments
   const filteredPayments = payments.filter((payment) => {
@@ -129,25 +141,38 @@ export function PaymentsSection() {
     setIsSubmitting(true);
 
     try {
+      // Preparar datos para enviar, convirtiendo "none" a undefined
+      const dataToSend = {
+        ...formData,
+        memberId: formData.memberId === "none" ? undefined : formData.memberId,
+        sponsorId:
+          formData.sponsorId === "none" ? undefined : formData.sponsorId,
+      };
+
+      console.log("Datos a enviar:", dataToSend);
+
       if (selectedPayment) {
-        await updatePayment(selectedPayment.id, formData);
+        await updatePayment(selectedPayment.id, dataToSend);
         toast({
           title: "Éxito",
           description: "Pago actualizado correctamente",
         });
         setIsEditDialogOpen(false);
       } else {
-        await createPayment(formData);
+        await createPayment(dataToSend);
         toast({ title: "Éxito", description: "Pago creado correctamente" });
         setIsAddDialogOpen(false);
       }
       setFormData({
         amount: 0,
+        type: "INCOME",
+        category: "",
         description: "",
         date: new Date(),
-        memberId: "none",
-        sponsorId: "none",
-        clubId: "",
+        memberId: undefined,
+        sponsorId: undefined,
+        clubId: user?.clubId || "",
+        isActive: true,
       });
       setSelectedPayment(null);
     } catch (error) {
@@ -183,11 +208,14 @@ export function PaymentsSection() {
     setSelectedPayment(payment);
     setFormData({
       amount: payment.amount,
+      type: payment.type,
+      category: payment.category || "",
       description: payment.description || "",
       date: new Date(payment.date),
       memberId: payment.memberId || "none",
       sponsorId: payment.sponsorId || "none",
       clubId: payment.clubId,
+      isActive: payment.isActive,
     });
     setIsEditDialogOpen(true);
   };
@@ -261,20 +289,53 @@ export function PaymentsSection() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Campo oculto para clubId */}
+              <input type="hidden" name="clubId" value={formData.clubId} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="type">Tipo de Transacción</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value: "INCOME" | "EXPENSE") =>
+                      setFormData({ ...formData, type: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="INCOME">Ingreso</SelectItem>
+                      <SelectItem value="EXPENSE">Egreso</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="amount">Monto</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        amount: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    required
+                  />
+                </div>
+              </div>
               <div>
-                <Label htmlFor="amount">Monto</Label>
+                <Label htmlFor="category">Categoría</Label>
                 <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  value={formData.amount}
+                  id="category"
+                  value={formData.category}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      amount: parseFloat(e.target.value) || 0,
-                    })
+                    setFormData({ ...formData, category: e.target.value })
                   }
-                  required
+                  placeholder="Ej: Cuota mensual, Mantenimiento, etc."
                 />
               </div>
               <div>
@@ -285,6 +346,7 @@ export function PaymentsSection() {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
+                  placeholder="Descripción detallada del pago"
                 />
               </div>
               <div>
@@ -298,6 +360,54 @@ export function PaymentsSection() {
                   }
                   required
                 />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="member">Miembro (opcional)</Label>
+                  <Select
+                    value={formData.memberId || "none"}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        memberId: value === "none" ? undefined : value,
+                        sponsorId: undefined,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar miembro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin miembro</SelectItem>
+                      {/* TODO: Cargar miembros del club */}
+                      <SelectItem value="member-1">Miembro 1</SelectItem>
+                      <SelectItem value="member-2">Miembro 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="sponsor">Sponsor (opcional)</Label>
+                  <Select
+                    value={formData.sponsorId || "none"}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        sponsorId: value === "none" ? undefined : value,
+                        memberId: undefined,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar sponsor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin sponsor</SelectItem>
+                      {/* TODO: Cargar sponsors del club */}
+                      <SelectItem value="sponsor-1">Sponsor 1</SelectItem>
+                      <SelectItem value="sponsor-2">Sponsor 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <DialogFooter>
                 <Button
@@ -452,12 +562,16 @@ export function PaymentsSection() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex items-center space-x-2">
-                      <Badge variant="outline">
-                        {payment.club?.name || "Sin club"}
+                      <Badge
+                        variant={
+                          payment.type === "INCOME" ? "default" : "destructive"
+                        }
+                      >
+                        {payment.type === "INCOME" ? "Ingreso" : "Egreso"}
                       </Badge>
-                      <Badge variant="secondary">
-                        {payment.member ? "Miembro" : "Sponsor"}
-                      </Badge>
+                      {payment.category && (
+                        <Badge variant="outline">{payment.category}</Badge>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
@@ -479,10 +593,11 @@ export function PaymentsSection() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Monto</TableHead>
+                <TableHead>Categoría</TableHead>
                 <TableHead>Descripción</TableHead>
                 <TableHead>Miembro/Sponsor</TableHead>
-                <TableHead>Club</TableHead>
                 <TableHead>Fecha</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
@@ -491,10 +606,20 @@ export function PaymentsSection() {
               {filteredPayments.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell>
+                    <Badge
+                      variant={
+                        payment.type === "INCOME" ? "default" : "destructive"
+                      }
+                    >
+                      {payment.type === "INCOME" ? "Ingreso" : "Egreso"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
                     <div className="font-medium">
                       ${payment.amount.toLocaleString()}
                     </div>
                   </TableCell>
+                  <TableCell>{payment.category || "Sin categoría"}</TableCell>
                   <TableCell>
                     {payment.description || "Sin descripción"}
                   </TableCell>
@@ -505,18 +630,17 @@ export function PaymentsSection() {
                           <User className="h-4 w-4" />
                           <span>{payment.member.name}</span>
                         </>
-                      ) : (
+                      ) : payment.sponsor ? (
                         <>
                           <Building className="h-4 w-4" />
-                          <span>{payment.sponsor?.name || "Sin nombre"}</span>
+                          <span>{payment.sponsor.name}</span>
                         </>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Sin asignar
+                        </span>
                       )}
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">
-                      {payment.club?.name || "Sin club"}
-                    </Badge>
                   </TableCell>
                   <TableCell>{formatDate(payment.date)}</TableCell>
                   <TableCell className="text-right">
@@ -655,7 +779,7 @@ export function PaymentsSection() {
                   setFormData({
                     ...formData,
                     memberId: value,
-                    sponsorId: "none",
+                    sponsorId: undefined,
                   })
                 }
               >
@@ -679,7 +803,7 @@ export function PaymentsSection() {
                   setFormData({
                     ...formData,
                     sponsorId: value,
-                    memberId: "none",
+                    memberId: undefined,
                   })
                 }
               >
@@ -724,20 +848,53 @@ export function PaymentsSection() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Campo oculto para clubId */}
+            <input type="hidden" name="clubId" value={formData.clubId} />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-type">Tipo de Transacción</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: "INCOME" | "EXPENSE") =>
+                    setFormData({ ...formData, type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INCOME">Ingreso</SelectItem>
+                    <SelectItem value="EXPENSE">Egreso</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-amount">Monto</Label>
+                <Input
+                  id="edit-amount"
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      amount: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  required
+                />
+              </div>
+            </div>
             <div>
-              <Label htmlFor="edit-amount">Monto</Label>
+              <Label htmlFor="edit-category">Categoría</Label>
               <Input
-                id="edit-amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
+                id="edit-category"
+                value={formData.category}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    amount: parseFloat(e.target.value) || 0,
-                  })
+                  setFormData({ ...formData, category: e.target.value })
                 }
-                required
+                placeholder="Ej: Cuota mensual, Mantenimiento, etc."
               />
             </div>
             <div>
@@ -748,6 +905,7 @@ export function PaymentsSection() {
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
+                placeholder="Descripción detallada del pago"
               />
             </div>
             <div>
@@ -766,72 +924,53 @@ export function PaymentsSection() {
                 required
               />
             </div>
-            <div>
-              <Label htmlFor="edit-club">Club</Label>
-              <Select
-                value={formData.clubId}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, clubId: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar club" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Assuming clubs data is available globally or passed as a prop */}
-                  {/* For now, using a placeholder or assuming it's imported */}
-                  {/* <SelectItem value="club-1">Club 1</SelectItem> */}
-                  {/* <SelectItem value="club-2">Club 2</SelectItem> */}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-member">Miembro (opcional)</Label>
-              <Select
-                value={formData.memberId}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    memberId: value,
-                    sponsorId: "none",
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar miembro" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin miembro</SelectItem>
-                  {/* Assuming members data is available globally or passed as a prop */}
-                  {/* For now, using a placeholder or assuming it's imported */}
-                  {/* <SelectItem value="member-1">Miembro 1</SelectItem> */}
-                  {/* <SelectItem value="member-2">Miembro 2</SelectItem> */}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="edit-sponsor">Sponsor (opcional)</Label>
-              <Select
-                value={formData.sponsorId}
-                onValueChange={(value) =>
-                  setFormData({
-                    ...formData,
-                    sponsorId: value,
-                    memberId: "none",
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar sponsor" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin sponsor</SelectItem>
-                  {/* Assuming sponsors data is available globally or passed as a prop */}
-                  {/* For now, using a placeholder or assuming it's imported */}
-                  {/* <SelectItem value="sponsor-1">Sponsor 1</SelectItem> */}
-                  {/* <SelectItem value="sponsor-2">Sponsor 2</SelectItem> */}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-member">Miembro (opcional)</Label>
+                <Select
+                  value={formData.memberId || "none"}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      memberId: value === "none" ? undefined : value,
+                      sponsorId: undefined,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar miembro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin miembro</SelectItem>
+                    {/* TODO: Cargar miembros del club */}
+                    <SelectItem value="member-1">Miembro 1</SelectItem>
+                    <SelectItem value="member-2">Miembro 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="edit-sponsor">Sponsor (opcional)</Label>
+                <Select
+                  value={formData.sponsorId || "none"}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      sponsorId: value === "none" ? undefined : value,
+                      memberId: undefined,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar sponsor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin sponsor</SelectItem>
+                    {/* TODO: Cargar sponsors del club */}
+                    <SelectItem value="sponsor-1">Sponsor 1</SelectItem>
+                    <SelectItem value="sponsor-2">Sponsor 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <DialogFooter>
               <Button
@@ -860,28 +999,46 @@ export function PaymentsSection() {
           </DialogHeader>
           {selectedPayment && (
             <div className="space-y-4">
-              <div>
-                <Label>Monto</Label>
-                <p className="text-sm font-medium">
-                  ${selectedPayment.amount.toLocaleString()}
-                </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Tipo</Label>
+                  <Badge
+                    variant={
+                      selectedPayment.type === "INCOME"
+                        ? "default"
+                        : "destructive"
+                    }
+                  >
+                    {selectedPayment.type === "INCOME" ? "Ingreso" : "Egreso"}
+                  </Badge>
+                </div>
+                <div>
+                  <Label>Monto</Label>
+                  <p className="text-sm font-medium">
+                    ${selectedPayment.amount.toLocaleString()}
+                  </p>
+                </div>
               </div>
-              <div>
-                <Label>Descripción</Label>
-                <p className="text-sm text-muted-foreground">
-                  {selectedPayment.description || "Sin descripción"}
-                </p>
-              </div>
+              {selectedPayment.category && (
+                <div>
+                  <Label>Categoría</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedPayment.category}
+                  </p>
+                </div>
+              )}
+              {selectedPayment.description && (
+                <div>
+                  <Label>Descripción</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedPayment.description}
+                  </p>
+                </div>
+              )}
               <div>
                 <Label>Fecha</Label>
                 <p className="text-sm text-muted-foreground">
                   {formatDate(selectedPayment.date)}
-                </p>
-              </div>
-              <div>
-                <Label>Club</Label>
-                <p className="text-sm text-muted-foreground">
-                  {selectedPayment.club?.name || "Sin club"}
                 </p>
               </div>
               <div>
@@ -891,6 +1048,14 @@ export function PaymentsSection() {
                     selectedPayment.sponsor?.name ||
                     "Sin asignar"}
                 </p>
+              </div>
+              <div>
+                <Label>Estado</Label>
+                <Badge
+                  variant={selectedPayment.isActive ? "default" : "secondary"}
+                >
+                  {selectedPayment.isActive ? "Activo" : "Inactivo"}
+                </Badge>
               </div>
             </div>
           )}

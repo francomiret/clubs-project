@@ -23,8 +23,7 @@ export class ActivitiesController {
     constructor(private readonly activitiesService: ActivitiesService) { }
 
     @Post()
-    @Roles({ id: '07ca500a-1ba4-4cd9-87d2-53e18db78b8a', name: 'ADMIN', clubId: 'club-example-id' })
-    @Roles({ id: 'dccdd76e-cdc4-4508-b3cb-0397a2c2ce5e', name: 'MANAGER', clubId: 'club-example-id' })
+    @Roles('ADMIN', 'MANAGER')
     create(@Body() createActivityDto: CreateActivityDto, @CurrentUser() user: UserEntity) {
         return this.activitiesService.create(createActivityDto);
     }
@@ -40,14 +39,13 @@ export class ActivitiesController {
     }
 
     @Patch(':id')
-    @Roles({ id: '07ca500a-1ba4-4cd9-87d2-53e18db78b8a', name: 'ADMIN', clubId: 'club-example-id' })
-    @Roles({ id: 'dccdd76e-cdc4-4508-b3cb-0397a2c2ce5e', name: 'MANAGER', clubId: 'club-example-id' })
+    @Roles('ADMIN', 'MANAGER')
     update(@Param('id') id: string, @Body() updateActivityDto: UpdateActivityDto) {
         return this.activitiesService.update(id, updateActivityDto);
     }
 
     @Delete(':id')
-    @Roles({ id: '07ca500a-1ba4-4cd9-87d2-53e18db78b8a', name: 'ADMIN', clubId: 'club-example-id' })
+    @Roles('ADMIN')
     remove(@Param('id') id: string) {
         return this.activitiesService.remove(id);
     }

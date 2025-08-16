@@ -1,21 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateActivityDto, UpdateActivityDto } from './dto';
 import { ActivitiesRepository } from './activities.repository';
-import { Activity } from './entities/activity.entity';
+import { ActivityEntity } from './entities/activity.entity';
 
 @Injectable()
 export class ActivitiesService {
     constructor(private readonly activitiesRepository: ActivitiesRepository) { }
 
-    async create(createActivityDto: CreateActivityDto): Promise<Activity> {
+    async create(createActivityDto: CreateActivityDto): Promise<ActivityEntity> {
         return this.activitiesRepository.create(createActivityDto);
     }
 
-    async findAll(clubId?: string): Promise<Activity[]> {
+    async findAll(clubId?: string): Promise<ActivityEntity[]> {
         return this.activitiesRepository.findAll(clubId);
     }
 
-    async findOne(id: string): Promise<Activity> {
+    async findOne(id: string): Promise<ActivityEntity> {
         try {
             return await this.activitiesRepository.findOne(id);
         } catch (error) {
@@ -23,7 +23,7 @@ export class ActivitiesService {
         }
     }
 
-    async update(id: string, updateActivityDto: UpdateActivityDto): Promise<Activity> {
+    async update(id: string, updateActivityDto: UpdateActivityDto): Promise<ActivityEntity> {
         try {
             return await this.activitiesRepository.update(id, updateActivityDto);
         } catch (error) {
@@ -31,7 +31,7 @@ export class ActivitiesService {
         }
     }
 
-    async remove(id: string): Promise<Activity> {
+    async remove(id: string): Promise<ActivityEntity> {
         try {
             return await this.activitiesRepository.remove(id);
         } catch (error) {

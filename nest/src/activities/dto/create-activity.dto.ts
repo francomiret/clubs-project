@@ -1,37 +1,38 @@
-import { IsString, IsOptional, IsNumber, IsDateString, IsBoolean, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsDateString, IsBoolean, IsUUID, IsEnum } from 'class-validator';
+import { ActivityType } from '@prisma/client';
 
 export class CreateActivityDto {
-    @IsString()
-    name: string;
+  @IsString()
+  name: string;
 
-    @IsOptional()
-    @IsString()
-    description?: string;
+  @IsOptional()
+  @IsString()
+  description?: string;
 
-    @IsString()
-    type: string;
+  @IsEnum(ActivityType)
+  type: ActivityType;
 
-    @IsDateString()
-    startDate: string;
+  @IsDateString()
+  startDate: string;
 
-    @IsDateString()
-    endDate: string;
+  @IsDateString()
+  endDate: string;
 
-    @IsString()
-    location: string;
+  @IsString()
+  location: string;
 
-    @IsOptional()
-    @IsNumber()
-    maxParticipants?: number;
+  @IsOptional()
+  @IsNumber()
+  maxParticipants?: number;
 
-    @IsOptional()
-    @IsNumber()
-    currentParticipants?: number;
+  @IsOptional()
+  @IsNumber()
+  currentParticipants?: number;
 
-    @IsUUID()
-    clubId: string;
+  @IsUUID()
+  clubId: string;
 
-    @IsOptional()
-    @IsBoolean()
-    isActive?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

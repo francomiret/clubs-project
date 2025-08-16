@@ -121,11 +121,16 @@ export interface UpdateSponsorData extends Partial<CreateSponsorData> { }
 export interface Payment {
     id: string
     amount: number
+    type: 'INCOME' | 'EXPENSE'
+    category?: string
     description?: string
     date: Date
     memberId?: string
     sponsorId?: string
     clubId: string
+    isActive: boolean
+    createdAt: Date
+    updatedAt: Date
     club?: Club
     member?: Member
     sponsor?: Sponsor
@@ -133,11 +138,14 @@ export interface Payment {
 
 export interface CreatePaymentData {
     amount: number
+    type: 'INCOME' | 'EXPENSE'
+    category?: string
     description?: string
     date: Date
     memberId?: string
     sponsorId?: string
     clubId: string
+    isActive?: boolean
 }
 
 export interface UpdatePaymentData extends Partial<CreatePaymentData> { }
